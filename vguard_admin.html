@@ -73,6 +73,19 @@
   @media(max-width:560px){.split{grid-template-columns:1fr}}
   .note{font-size:11.5px;color:var(--muted);margin-top:10px;font-style:italic}
   code{background:#f1f5f9;padding:2px 6px;border-radius:5px;font-size:12px}
+  .tabbar-wrap{background:var(--navy-2);border-bottom:1px solid rgba(255,255,255,.08)}
+  .tabbar{max-width:1180px;margin:0 auto;display:flex;gap:4px;padding:0 24px}
+  .tabbtn{font-family:var(--display);font-weight:600;font-size:13.5px;background:none;border:none;color:#b8c4d4;padding:13px 16px;cursor:pointer;border-bottom:3px solid transparent}
+  .tabbtn.active{color:#fff;border-bottom-color:var(--amber)}
+  .tabbtn:hover{color:#fff}
+  .tabpane{display:none}
+  .tabpane.active{display:block}
+  tr.rowclick{cursor:pointer}
+  tr.rowclick:hover{background:var(--paper)}
+  .modal-overlay{position:fixed;inset:0;background:rgba(16,35,59,.55);display:none;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto;z-index:100}
+  .modal-box{background:var(--card);border-radius:16px;max-width:560px;width:100%;padding:26px 26px 22px;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+  .modal-close{position:absolute;top:16px;right:16px;background:var(--paper);border:none;border-radius:8px;width:30px;height:30px;font-size:15px;cursor:pointer;color:var(--muted)}
+  .modal-close:hover{color:var(--ink)}
 </style>
 </head>
 <body>
@@ -90,9 +103,22 @@
     </div>
   </div>
 </header>
-<main id="main">
-  <div class="empty"><div class="spin"></div>Loading responses…</div>
+<div class="tabbar-wrap">
+  <div class="tabbar">
+    <button class="tabbtn active" data-tab="individual">📋 Individual responses</button>
+    <button class="tabbtn" data-tab="analytics">📊 Analytics</button>
+  </div>
+</div>
+<main>
+  <div id="tabIndividual" class="tabpane active"><div class="empty"><div class="spin"></div>Loading responses…</div></div>
+  <div id="tabAnalytics" class="tabpane"><div class="empty"><div class="spin"></div>Loading responses…</div></div>
 </main>
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <button class="modal-close" id="modalClose">✕</button>
+    <div id="modalBody"></div>
+  </div>
+</div>
 
 <script>
 /* ============================================================
@@ -132,16 +158,30 @@ const VAL={ // decode stored value-ids to readable labels for simple questions
   q12:{electrician:'Electrician / trusted electrical brand',oem:'Vehicle maker',specialist:'Specialist EV co.',cheap:'Cheapest',dunno:'No idea'},
   q7:{safety:'Safety',brand:'Brand',price:'Price',elec:'Electrician rec.',warranty:'Warranty',avail:'Availability'},
   q8:{price:'Price',features:'Features/looks',brand:'Brand',reviews:'Online reviews',energy:'Energy eff.',service:'After-sales'},
+  q2:{newbuild:'New house construction',reno:'Major renovation with wiring',repair:'Minor repair with an electrician',finished:'Bought finished products only'},
+  q3:{south:'South India',west:'West',north:'North',east:'East',central:'Central / North-East'},
+  q6:{safe:"Knows what's safe/reliable",install:'They install it, so they should pick',unknow:"Don't know these products well",easy:'Easier than researching',dont:"Doesn't follow the recommendation"},
+  q13:{u25:'Under 25','25-34':'25–34','35-44':'35–44','45-54':'45–54','55+':'55+'},
+  q14:{lt50:'Under ₹50,000','50-1':'₹50,000–₹1 lakh','1-2':'₹1–2 lakh',gt2:'Over ₹2 lakh',na:'Prefer not to say'},
+  q15:{house:'Owned house',flat:'Owned flat',rent:'Rented'},
 };
+const PRODLABEL={};PRODUCTS.forEach(p=>PRODLABEL[p.id]=p.em+' '+p.label);
+
+function decLabel(map,code){return map&&code&&map[code]?map[code]:(code||'—');}
+function decMulti(map,str){return str?String(str).split('|').filter(Boolean).map(c=>decLabel(map,c)).join(', ')||'—':'—';}
+function decRank(map,str){return str?String(str).split('>').filter(Boolean).map((c,i)=>`${i+1}. ${decLabel(map,c)}`).join('   ')||'—':'—';}
+function decQ1(str){return str?String(str).split('|').filter(Boolean).map(c=>PRODLABEL[c]||c).join(', ')||'—':'—';}
 
 let RAW=[]; // all rows
 const $=s=>document.querySelector(s);
 
 function load(){
-  $('#main').innerHTML='<div class="empty"><div class="spin"></div>Loading responses…</div>';
+  const spin='<div class="empty"><div class="spin"></div>Loading responses…</div>';
+  $('#tabIndividual').innerHTML=spin;$('#tabAnalytics').innerHTML=spin;
   if(!FEED_URL||FEED_URL.indexOf('PASTE_YOUR')===0){
-    $('#main').innerHTML=`<div class="panel"><h2>Almost there — connect your data feed</h2>
+    const msg=`<div class="panel"><h2>Almost there — connect your data feed</h2>
       <p class="psub">Open <code>vguard_admin.html</code> in a text editor and set <code>FEED_URL</code> to your Apps Script Web App URL (the same one used by the survey). See <code>SETUP_GUIDE.md</code>. Once set, this page fills with live charts.</p></div>`;
+    $('#tabIndividual').innerHTML=msg;$('#tabAnalytics').innerHTML=msg;
     return;
   }
   const url=FEED_URL+(ADMIN_KEY?('?key='+encodeURIComponent(ADMIN_KEY)):'');
@@ -151,7 +191,8 @@ function load(){
     populateLangFilter();
     renderAll();
   }).catch(err=>{
-    $('#main').innerHTML=`<div class="panel"><h2>Couldn't load data</h2><p class="psub">${err.message}. Check the URL and that the script is deployed with access set to "Anyone".</p></div>`;
+    const msg=`<div class="panel"><h2>Couldn't load data</h2><p class="psub">${err.message}. Check the URL and that the script is deployed with access set to "Anyone".</p></div>`;
+    $('#tabIndividual').innerHTML=msg;$('#tabAnalytics').innerHTML=msg;
   });
 }
 
@@ -169,8 +210,96 @@ function pct(n,d){return d?Math.round(n/d*100):0;}
 
 function renderAll(){
   const D=filtered();
+  renderIndividual(D);
+  renderAnalytics(D);
+}
+
+function renderIndividual(D){
+  const target=$('#tabIndividual');
+  if(!D.length){target.innerHTML='<div class="empty">No responses match this filter yet.</div>';return;}
+  const rows=D.slice().reverse(); // newest first
+  let h=`<div class="panel full"><div class="ph"><h2>Individual responses</h2><span class="tag">${rows.length} shown</span></div>
+    <p class="psub">Click any row to see the full response, question by question.</p>
+    <div style="overflow-x:auto"><table><thead><tr>
+      <th>#</th><th>Submitted</th><th>Lang</th><th>Region</th><th>Age</th><th>Income</th><th>Home</th><th class="num">Time (s)</th><th></th>
+    </tr></thead><tbody>`;
+  rows.forEach((r,i)=>{
+    const idx=RAW.indexOf(r);
+    const dt=r.timestamp?new Date(r.timestamp):null;
+    const when=dt&&!isNaN(dt)?dt.toLocaleString():String(r.timestamp||'—');
+    h+=`<tr class="rowclick" data-idx="${idx}">
+      <td>${rows.length-i}</td>
+      <td>${when}</td>
+      <td>${LANGS[r.lang]||r.lang||'—'}</td>
+      <td>${decLabel(VAL.q3,r.q3)}</td>
+      <td>${decLabel(VAL.q13,r.q13)}</td>
+      <td>${decLabel(VAL.q14,r.q14)}</td>
+      <td>${decLabel(VAL.q15,r.q15)}</td>
+      <td class="num">${r.seconds||'—'}</td>
+      <td><button class="btn ghost" style="padding:5px 10px;font-size:12px;color:var(--navy);border-color:var(--line)">View →</button></td>
+    </tr>`;
+  });
+  h+='</tbody></table></div></div>';
+  target.innerHTML=h;
+  target.querySelectorAll('tr.rowclick').forEach(tr=>tr.addEventListener('click',()=>openDetail(RAW[+tr.dataset.idx])));
+}
+
+function detailSection(title,pairs){
+  let h=`<div style="margin-top:16px"><h3 style="font-family:var(--display);font-size:12.5px;color:var(--copper);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">${title}</h3>`;
+  pairs.forEach(([k,v])=>{h+=`<div style="display:flex;justify-content:space-between;gap:14px;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px"><span style="color:var(--muted)">${k}</span><span style="font-weight:600;text-align:right">${esc(String(v))}</span></div>`;});
+  return h+'</div>';
+}
+
+function openDetail(r){
+  if(!r)return;
+  const dt=r.timestamp?new Date(r.timestamp):null;
+  const when=dt&&!isNaN(dt)?dt.toLocaleString():String(r.timestamp||'—');
+  let h=`<h2 style="font-family:var(--display);color:var(--navy);margin-bottom:2px">Response detail</h2>
+    <p class="psub">${when} · ${LANGS[r.lang]||r.lang||'—'} · ${r.seconds||'—'}s to complete</p>`;
+  h+=detailSection('Context',[
+    ['Bought / helped choose (Q1)',decQ1(r.q1)],
+    ['Electrical work done (Q2)',decMulti(VAL.q2,r.q2)],
+    ['Region (Q3)',decLabel(VAL.q3,r.q3)],
+  ]);
+  const q4rows=PRODUCTS.filter(p=>r['q4_'+p.id]).map(p=>{
+    const inf=INF.find(i=>i.id===r['q4_'+p.id]);
+    return [p.em+' '+p.label, inf?inf.label:r['q4_'+p.id]];
+  });
+  if(q4rows.length)h+=detailSection('Who chose the brand — per product (Q4)',q4rows);
+  h+=detailSection('Trust & influence',[
+    ["Trust in electrician's pick (Q5)",decLabel(VAL.q5,r.q5)],
+    ['Why follow electrician (Q6)',decMulti(VAL.q6,r.q6)],
+  ]);
+  h+=detailSection('What matters most',[
+    ['Electricals — top 3 (Q7)',decRank(VAL.q7,r.q7)],
+    ['Durables — top 3 (Q8)',decRank(VAL.q8,r.q8)],
+  ]);
+  h+=detailSection('Brand & EV',[
+    ['Knows V-Guard (Q9)',decLabel(VAL.q9,r.q9)],
+    ['EV ownership / intent (Q11)',decLabel(VAL.q11,r.q11)],
+    ['Trust for EV charger (Q12)',decLabel(VAL.q12,r.q12)],
+  ]);
+  if(r.q10&&String(r.q10).trim())h+=`<div style="margin-top:16px"><h3 style="font-family:var(--display);font-size:12.5px;color:var(--copper);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">What V-Guard means to them (Q10)</h3><div class="quote">"${esc(r.q10)}"</div></div>`;
+  h+=detailSection('About the respondent',[
+    ['Age (Q13)',decLabel(VAL.q13,r.q13)],
+    ['Household income (Q14)',decLabel(VAL.q14,r.q14)],
+    ['Home (Q15)',decLabel(VAL.q15,r.q15)],
+  ]);
+  $('#modalBody').innerHTML=h;
+  $('#modalOverlay').style.display='flex';
+}
+$('#modalClose').onclick=()=>{$('#modalOverlay').style.display='none';};
+$('#modalOverlay').addEventListener('click',e=>{if(e.target.id==='modalOverlay')$('#modalOverlay').style.display='none';});
+document.querySelectorAll('.tabbtn').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.tabbtn').forEach(x=>x.classList.toggle('active',x===b));
+  $('#tabIndividual').classList.toggle('active',b.dataset.tab==='individual');
+  $('#tabAnalytics').classList.toggle('active',b.dataset.tab==='analytics');
+}));
+
+function renderAnalytics(D){
+  const target=$('#tabAnalytics');
   const n=D.length;
-  if(!n){$('#main').innerHTML='<div class="empty">No responses match this filter yet.</div>';return;}
+  if(!n){target.innerHTML='<div class="empty">No responses match this filter yet.</div>';return;}
 
   // KPIs
   const knowV = D.filter(r=>r.q9==='own'||r.q9==='aware').length;
@@ -254,7 +383,7 @@ function renderAll(){
   else html+=`<p class="psub">No open-text responses yet.</p>`;
   html+=`</div>`;
 
-  $('#main').innerHTML=html;
+  target.innerHTML=html;
 }
 
 /* ---- chart helpers ---- */
