@@ -615,7 +615,7 @@ function render(){
 function wire(item){
   const qid=item.id;
   if(item.type==='single'){
-    stage.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{answers[qid]=b.dataset.id;render();setTimeout(()=>{if(canAdvance(item))go(1);},170);});
+    stage.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{answers[qid]=b.dataset.id;render();setTimeout(()=>{if(canAdvance(item))advance();},170);});
   }
   if(item.type==='multi'){
     stage.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
@@ -647,6 +647,12 @@ function canAdvance(item){
   return true;
 }
 function go(d){idx=Math.max(-1,Math.min(TOTAL,idx+d));window.scrollTo({top:0,behavior:'smooth'});render();}
+// shared by the manual Next/Finish click AND the single-select auto-advance timer,
+// so answering the last question either way still triggers submit()
+function advance(){
+  if(idx===TOTAL-1){go(1);submit();return;}
+  go(1);
+}
 
 nextBtn.onclick=()=>{
   if(idx<0){go(1);return;}
@@ -655,8 +661,7 @@ nextBtn.onclick=()=>{
     const m={multi:`${t('errMulti')} ${item.min||1}.`,single:t('errOne'),rank:`${t('errRank')} ${item.pick}.`,matrix:t('errMatrix')};
     errEl.textContent=m[item.type]||t('errOne');return;
   }
-  if(idx===TOTAL-1){go(1);submit();return;}
-  go(1);
+  advance();
 };
 backBtn.onclick=()=>go(-1);
 document.addEventListener('keydown',e=>{
