@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V-Guard · Who Decides What You Buy?</title>
+<style>
+  :root{
+    --navy:#10233b;--navy-2:#1b3554;--copper:#c8703a;--copper-lt:#e59b6b;
+    --amber:#f2b134;--paper:#f6f3ec;--paper-card:#fffdf8;--ink:#14202e;
+    --muted:#5f7189;--green:#2f9e6f;--line:rgba(16,35,59,.12);
+    --shadow:0 12px 40px -12px rgba(16,35,59,.35);--r:18px;
+    --display:"Space Grotesk",-apple-system,system-ui,sans-serif;
+    --body:"Inter","Noto Sans",-apple-system,system-ui,sans-serif;
+  }
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&family=Noto+Sans:wght@400;500;600&family=Noto+Sans+Devanagari:wght@400;500;600&family=Noto+Sans+Tamil:wght@400;500;600&family=Noto+Sans+Telugu:wght@400;500;600&family=Noto+Sans+Kannada:wght@400;500;600&family=Noto+Sans+Malayalam:wght@400;500;600&family=Noto+Sans+Bengali:wght@400;500;600&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{font-family:var(--body);color:var(--ink);
+    background:radial-gradient(1200px 600px at 80% -10%,rgba(242,177,52,.10),transparent 60%),radial-gradient(900px 500px at -10% 110%,rgba(200,112,58,.10),transparent 55%),var(--paper);
+    min-height:100dvh;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
+  .rail{position:sticky;top:0;z-index:20;background:rgba(246,243,236,.82);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .rail-in{max-width:720px;margin:0 auto;padding:14px 20px;display:flex;align-items:center;gap:14px}
+  .mark{font-family:var(--display);font-weight:700;letter-spacing:-.02em;font-size:15px;color:var(--navy);white-space:nowrap;display:flex;align-items:center;gap:8px}
+  .mark .bolt{width:22px;height:22px;display:grid;place-items:center;background:var(--navy);border-radius:6px;color:var(--amber);font-size:13px}
+  .track{flex:1;height:8px;background:rgba(16,35,59,.10);border-radius:99px;overflow:hidden}
+  .fill{height:100%;width:0;background:linear-gradient(90deg,var(--copper),var(--amber));border-radius:99px;transition:width .5s cubic-bezier(.4,0,.1,1)}
+  .langbtn{font-family:var(--body);font-size:13px;font-weight:600;color:var(--navy);background:#fff;border:1.4px solid var(--line);border-radius:99px;padding:6px 12px;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:5px}
+  .langbtn:hover{border-color:var(--copper-lt)}
+  main{flex:1;display:flex;align-items:flex-start;justify-content:center;padding:32px 20px 120px}
+  .stage{width:100%;max-width:720px}
+  .card{background:var(--paper-card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:38px 34px 30px;animation:rise .45s cubic-bezier(.2,.7,.2,1) both}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;font-family:var(--display);font-weight:600;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--copper);margin-bottom:16px}
+  .eyebrow .dot{width:7px;height:7px;border-radius:99px;background:var(--amber);box-shadow:0 0 0 4px rgba(242,177,52,.2)}
+  h1.q{font-family:var(--display);font-weight:600;font-size:clamp(21px,4.4vw,29px);line-height:1.25;letter-spacing:-.01em;color:var(--navy);margin-bottom:8px}
+  .sub{font-size:14.5px;color:var(--muted);line-height:1.5;margin-bottom:24px;max-width:56ch}
+  .hint{font-size:12.5px;color:var(--copper);font-weight:600;margin-bottom:18px}
+  .opts{display:grid;gap:10px}
+  .opts.two{grid-template-columns:1fr 1fr}
+  @media(max-width:560px){.opts.two{grid-template-columns:1fr}}
+  .opt{display:flex;align-items:center;gap:13px;text-align:left;background:#fff;border:1.5px solid var(--line);border-radius:13px;padding:15px 16px;cursor:pointer;font:inherit;font-size:14.5px;color:var(--ink);transition:border-color .15s,transform .12s,background .15s,box-shadow .15s}
+  .opt:hover{border-color:var(--copper-lt);transform:translateY(-1px)}
+  .opt .tick{width:22px;height:22px;border-radius:7px;border:2px solid var(--line);flex:none;display:grid;place-items:center;transition:.15s}
+  .opt .tick svg{width:12px;height:12px;opacity:0;transform:scale(.4);transition:.15s}
+  .opt.sel{border-color:var(--copper);background:linear-gradient(0deg,rgba(242,177,52,.08),rgba(242,177,52,.08)),#fff;box-shadow:0 6px 18px -8px rgba(200,112,58,.5)}
+  .opt.sel .tick{background:var(--copper);border-color:var(--copper)}
+  .opt.sel .tick svg{opacity:1;transform:scale(1);color:#fff}
+  .opt .rank{width:22px;height:22px;border-radius:7px;background:var(--navy);color:var(--amber);font-family:var(--display);font-weight:700;font-size:12px;display:none;place-items:center;flex:none}
+  .opt.sel .rank{display:grid}.opt.sel .tick{display:none}
+  .opt .lead{font-size:19px;line-height:1;flex:none}
+  .matrix{display:grid;gap:14px}
+  .mrow{background:#fff;border:1.5px solid var(--line);border-radius:13px;padding:14px 15px}
+  .mrow.done{border-color:var(--green);background:linear-gradient(0deg,rgba(47,158,111,.05),rgba(47,158,111,.05)),#fff}
+  .mrow-h{font-family:var(--display);font-weight:600;font-size:15px;color:var(--navy);margin-bottom:11px;display:flex;align-items:center;gap:9px}
+  .mrow-h .em{font-size:18px}
+  .chips{display:flex;flex-wrap:wrap;gap:7px}
+  .chip{font:inherit;font-size:12.5px;padding:8px 12px;border-radius:99px;border:1.4px solid var(--line);background:var(--paper);color:var(--muted);cursor:pointer;transition:.13s;font-weight:500}
+  .chip:hover{border-color:var(--copper-lt);color:var(--ink)}
+  .chip.on{background:var(--navy);border-color:var(--navy);color:var(--amber);font-weight:600}
+  .field{width:100%;font:inherit;font-size:16px;padding:15px 16px;border:1.5px solid var(--line);border-radius:13px;background:#fff;color:var(--ink)}
+  .field:focus{outline:none;border-color:var(--copper)}
+  .nav{position:fixed;left:0;right:0;bottom:0;background:rgba(246,243,236,.9);backdrop-filter:blur(10px);border-top:1px solid var(--line);z-index:20}
+  .nav-in{max-width:720px;margin:0 auto;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:14px}
+  .btn{font-family:var(--display);font-weight:600;font-size:15px;border:none;border-radius:12px;padding:13px 26px;cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:8px}
+  .btn-primary{background:var(--navy);color:#fff}
+  .btn-primary:hover{background:var(--navy-2);transform:translateY(-1px);box-shadow:0 8px 20px -8px rgba(16,35,59,.6)}
+  .btn-primary:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+  .btn-ghost{background:transparent;color:var(--muted);padding:13px 10px}
+  .btn-ghost:hover{color:var(--navy)}
+  .btn-ghost:disabled{opacity:0;pointer-events:none}
+  .center{text-align:center;padding:44px 34px}
+  .center .big{font-family:var(--display);font-weight:700;font-size:clamp(28px,6.4vw,44px);line-height:1.08;letter-spacing:-.02em;color:var(--navy);margin:18px 0 14px}
+  .center .big em{font-style:normal;color:var(--copper)}
+  .center p{color:var(--muted);font-size:15.5px;line-height:1.6;max-width:48ch;margin:0 auto 10px}
+  .meta{display:flex;gap:22px;justify-content:center;margin-top:26px;flex-wrap:wrap}
+  .meta div{font-size:13px;color:var(--muted)}
+  .meta b{display:block;font-family:var(--display);font-size:20px;color:var(--navy);font-weight:700}
+  .hero-bolt{width:64px;height:64px;margin:0 auto;background:var(--navy);border-radius:18px;display:grid;place-items:center;color:var(--amber);font-size:32px;box-shadow:var(--shadow);transform:rotate(-6deg)}
+  .pill{display:inline-block;background:rgba(47,158,111,.12);color:var(--green);font-weight:600;font-size:13px;padding:7px 14px;border-radius:99px;margin-bottom:8px}
+  .err{color:#c0392b;font-size:13px;min-height:16px;font-weight:500;text-align:center}
+  /* language grid on intro */
+  .langgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;max-width:420px;margin:22px auto 0}
+  @media(min-width:520px){.langgrid{grid-template-columns:repeat(4,1fr)}}
+  .langcard{font:inherit;font-size:15px;font-weight:600;padding:13px 8px;border-radius:12px;border:1.6px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;transition:.14s}
+  .langcard:hover{border-color:var(--copper);transform:translateY(-1px)}
+  .langcard.sel{border-color:var(--copper);background:linear-gradient(0deg,rgba(242,177,52,.10),rgba(242,177,52,.10)),#fff}
+  .langlabel{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;font-weight:600;margin-top:20px}
+  .spin{width:34px;height:34px;border:3px solid rgba(16,35,59,.15);border-top-color:var(--copper);border-radius:50%;animation:sp .8s linear infinite;margin:8px auto}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  /* language sheet overlay */
+  .sheet{position:fixed;inset:0;background:rgba(16,35,59,.4);backdrop-filter:blur(3px);z-index:50;display:none;align-items:flex-end;justify-content:center}
+  .sheet.open{display:flex}
+  .sheet-in{background:var(--paper-card);border-radius:22px 22px 0 0;padding:24px 20px 30px;width:100%;max-width:520px;animation:up .3s ease}
+  @keyframes up{from{transform:translateY(100%)}to{transform:none}}
+  .sheet h3{font-family:var(--display);font-size:17px;color:var(--navy);margin-bottom:14px;text-align:center}
+</style>
+</head>
+<body>
+<div class="rail">
+  <div class="rail-in">
+    <div class="mark"><span class="bolt">⚡</span><span id="brandTxt">V-GUARD</span></div>
+    <div class="track"><div class="fill" id="fill"></div></div>
+    <button class="langbtn" id="langBtn">🌐 <span id="langCur">EN</span></button>
+  </div>
+</div>
+<main><div class="stage" id="stage"></div></main>
+<div class="nav">
+  <div class="nav-in">
+    <button class="btn btn-ghost" id="back"></button>
+    <div class="err" id="err"></div>
+    <button class="btn btn-primary" id="next"></button>
+  </div>
+</div>
+<div class="sheet" id="sheet"><div class="sheet-in">
+  <h3 id="sheetTitle">Choose your language</h3>
+  <div class="langgrid" id="langGrid"></div>
+</div></div>
+
+<script>
+/* ============================================================
+   CONFIG — paste your Google Apps Script Web App URL here after
+   you deploy it (step-by-step guide in the setup file).
+   Until then the survey still runs and stores responses locally
+   in memory; on submit it will show the URL-missing notice.
+   ============================================================ */
+const ENDPOINT_URL = "https://script.google.com/macros/s/AKfycbw9wYqKwrQJziiZoAHgwyTxKHQ0yUAPdwQreKL2KhjRy_cOGhAvVUUBkISr4dOGhDsX/exec";
+/* ============================================================ */
+
+/* V-Guard survey translations. Answer VALUES stay English (in the model);
+   only display labels are translated so data stays analysable across languages. */
+const I18N = {
+  en:{name:"English",dir:"ltr",
+    brand:"V-GUARD",start:"Start",done:"Done ✓",begin:"Begin →",continue:"Continue →",finish:"Finish →",back:"← Back",
+    heroA:"Who",heroEm:"really",heroB:"chose it?",
+    heroP1:"Every product in your home was a decision. Some you made yourself. Some an electrician made for you without you noticing.",
+    heroP2a:"We're mapping which is which. It takes about",heroP2b:", one question at a time.",
+    m1:"quick questions",m2:"minutes",m3:"anonymous",mMin:"~4",
+    langPick:"Choose your language",
+    outroPill:"Response recorded",outroA:"That's a",outroB:"full circuit.",
+    outroP:"Thank you — your response is being saved. This takes a moment.",
+    saving:"Saving your response…",saved:"✓ Saved. Thank you!",
+    saveErr:"Couldn't save — please check your connection and tap retry.",retry:"Retry",
+    errOne:"Pick one to continue.",errMulti:"Pick at least",errRank:"Choose your top",errMatrix:"Answer every row to continue.",
+    ph10:"e.g. stabilisers, reliable, my dad's choice…",optionalSkip:"Optional — tap Continue to skip.",
+    secContext:"Context",secBig:"The big question",secTrust:"Trust",secValue:"What you value",secBrand:"Brand",secRoad:"The road ahead",secYou:"About you",
+  },
+  hi:{name:"हिन्दी",dir:"ltr",
+    brand:"V-GUARD",start:"शुरू",done:"पूर्ण ✓",begin:"शुरू करें →",continue:"आगे बढ़ें →",finish:"समाप्त →",back:"← पीछे",
+    heroA:"असल में",heroEm:"किसने",heroB:"चुना?",
+    heroP1:"आपके घर की हर चीज़ एक निर्णय थी। कुछ आपने खुद चुनी। कुछ इलेक्ट्रिशियन ने आपके लिए चुनी, बिना आपके ध्यान दिए।",
+    heroP2a:"हम यही पता लगा रहे हैं। इसमें लगभग",heroP2b:"लगते हैं, एक बार में एक सवाल।",
+    m1:"आसान सवाल",m2:"मिनट",m3:"पूर्णतः गुप्त",mMin:"~4",
+    langPick:"अपनी भाषा चुनें",
+    outroPill:"उत्तर दर्ज हुआ",outroA:"बस",outroB:"हो गया।",
+    outroP:"धन्यवाद — आपका उत्तर सहेजा जा रहा है। कृपया प्रतीक्षा करें।",
+    saving:"आपका उत्तर सहेजा जा रहा है…",saved:"✓ सहेजा गया। धन्यवाद!",
+    saveErr:"सहेजा नहीं जा सका — कृपया कनेक्शन जाँचें और पुनः प्रयास करें।",retry:"पुनः प्रयास",
+    errOne:"जारी रखने के लिए एक चुनें।",errMulti:"कम से कम चुनें",errRank:"अपने शीर्ष चुनें",errMatrix:"हर पंक्ति का उत्तर दें।",
+    ph10:"जैसे स्टेबलाइज़र, भरोसेमंद, पिताजी की पसंद…",optionalSkip:"वैकल्पिक — छोड़ने के लिए आगे बढ़ें।",
+    secContext:"संदर्भ",secBig:"मुख्य सवाल",secTrust:"भरोसा",secValue:"आपकी प्राथमिकता",secBrand:"ब्रांड",secRoad:"आगे की राह",secYou:"आपके बारे में",
+  },
+  ta:{name:"தமிழ்",dir:"ltr",
+    brand:"V-GUARD",start:"தொடங்கு",done:"முடிந்தது ✓",begin:"தொடங்கு →",continue:"தொடரவும் →",finish:"முடி →",back:"← பின்",
+    heroA:"உண்மையில்",heroEm:"யார்",heroB:"தேர்ந்தெடுத்தார்?",
+    heroP1:"உங்கள் வீட்டின் ஒவ்வொரு பொருளும் ஒரு முடிவு. சிலவற்றை நீங்களே தேர்ந்தெடுத்தீர்கள். சிலவற்றை மின்சாரி உங்களுக்காக தேர்ந்தெடுத்தார், நீங்கள் அறியாமலே.",
+    heroP2a:"எது எது என்பதை நாங்கள் வரைபடமாக்குகிறோம். இதற்கு சுமார்",heroP2b:"ஆகும், ஒரு நேரத்தில் ஒரு கேள்வி.",
+    m1:"விரைவு கேள்விகள்",m2:"நிமிடங்கள்",m3:"முழு அநாமதேயம்",mMin:"~4",
+    langPick:"உங்கள் மொழியைத் தேர்ந்தெடுக்கவும்",
+    outroPill:"பதில் பதிவாகியது",outroA:"இதோ",outroB:"முடிந்தது.",
+    outroP:"நன்றி — உங்கள் பதில் சேமிக்கப்படுகிறது. சற்று பொறுங்கள்.",
+    saving:"உங்கள் பதில் சேமிக்கப்படுகிறது…",saved:"✓ சேமிக்கப்பட்டது. நன்றி!",
+    saveErr:"சேமிக்க முடியவில்லை — இணைப்பைச் சரிபார்த்து மீண்டும் முயற்சிக்கவும்.",retry:"மீண்டும்",
+    errOne:"தொடர ஒன்றைத் தேர்வுசெய்க.",errMulti:"குறைந்தது தேர்வுசெய்க",errRank:"முதல் தேர்வுகளைத் தேர்வுசெய்க",errMatrix:"ஒவ்வொரு வரிசைக்கும் பதிலளிக்கவும்.",
+    ph10:"எ.கா. ஸ்டெபிலைசர், நம்பகமான, அப்பாவின் தேர்வு…",optionalSkip:"விருப்பம் — தவிர்க்க தொடரவும்.",
+    secContext:"பின்னணி",secBig:"முக்கிய கேள்வி",secTrust:"நம்பிக்கை",secValue:"நீங்கள் மதிப்பது",secBrand:"பிராண்ட்",secRoad:"எதிர்காலம்",secYou:"உங்களைப் பற்றி",
+  },
+  te:{name:"తెలుగు",dir:"ltr",
+    brand:"V-GUARD",start:"ప్రారంభం",done:"పూర్తయింది ✓",begin:"ప్రారంభించు →",continue:"కొనసాగించు →",finish:"ముగించు →",back:"← వెనుక",
+    heroA:"నిజంగా",heroEm:"ఎవరు",heroB:"ఎంచుకున్నారు?",
+    heroP1:"మీ ఇంటిలోని ప్రతి వస్తువూ ఒక నిర్ణయం. కొన్ని మీరే ఎంచుకున్నారు. కొన్ని ఎలక్ట్రీషియన్ మీకు తెలియకుండానే ఎంచుకున్నారు.",
+    heroP2a:"ఏది ఏదో మేము గుర్తిస్తున్నాము. దీనికి సుమారు",heroP2b:"పడుతుంది, ఒకసారి ఒక ప్రశ్న.",
+    m1:"త్వరిత ప్రశ్నలు",m2:"నిమిషాలు",m3:"పూర్తి గోప్యం",mMin:"~4",
+    langPick:"మీ భాషను ఎంచుకోండి",
+    outroPill:"సమాధానం నమోదైంది",outroA:"ఇదిగో",outroB:"పూర్తయింది.",
+    outroP:"ధన్యవాదాలు — మీ సమాధానం సేవ్ అవుతోంది. దయచేసి వేచి ఉండండి.",
+    saving:"మీ సమాధానం సేవ్ అవుతోంది…",saved:"✓ సేవ్ అయింది. ధన్యవాదాలు!",
+    saveErr:"సేవ్ చేయలేకపోయాము — కనెక్షన్ తనిఖీ చేసి మళ్లీ ప్రయత్నించండి.",retry:"మళ్లీ",
+    errOne:"కొనసాగించడానికి ఒకటి ఎంచుకోండి.",errMulti:"కనీసం ఎంచుకోండి",errRank:"మీ అగ్ర ఎంపికలను ఎంచుకోండి",errMatrix:"ప్రతి వరుసకు సమాధానం ఇవ్వండి.",
+    ph10:"ఉదా. స్టెబిలైజర్, నమ్మదగిన, నాన్న ఎంపిక…",optionalSkip:"ఐచ్ఛికం — దాటవేయడానికి కొనసాగించు.",
+    secContext:"సందర్భం",secBig:"ముఖ్య ప్రశ్న",secTrust:"నమ్మకం",secValue:"మీరు విలువైనవి",secBrand:"బ్రాండ్",secRoad:"ముందు దారి",secYou:"మీ గురించి",
+  },
+  kn:{name:"ಕನ್ನಡ",dir:"ltr",
+    brand:"V-GUARD",start:"ಪ್ರಾರಂಭ",done:"ಮುಗಿದಿದೆ ✓",begin:"ಪ್ರಾರಂಭಿಸಿ →",continue:"ಮುಂದುವರಿಸಿ →",finish:"ಮುಗಿಸಿ →",back:"← ಹಿಂದೆ",
+    heroA:"ನಿಜವಾಗಿ",heroEm:"ಯಾರು",heroB:"ಆರಿಸಿದರು?",
+    heroP1:"ನಿಮ್ಮ ಮನೆಯ ಪ್ರತಿ ವಸ್ತುವೂ ಒಂದು ನಿರ್ಧಾರ. ಕೆಲವನ್ನು ನೀವೇ ಆರಿಸಿದಿರಿ. ಕೆಲವನ್ನು ಎಲೆಕ್ಟ್ರೀಷಿಯನ್ ನಿಮಗೆ ಗೊತ್ತಿಲ್ಲದೇ ಆರಿಸಿದರು.",
+    heroP2a:"ಯಾವುದು ಯಾವುದು ಎಂದು ನಾವು ಗುರುತಿಸುತ್ತಿದ್ದೇವೆ. ಇದಕ್ಕೆ ಸುಮಾರು",heroP2b:"ಬೇಕು, ಒಂದೊಂದೇ ಪ್ರಶ್ನೆ.",
+    m1:"ತ್ವರಿತ ಪ್ರಶ್ನೆಗಳು",m2:"ನಿಮಿಷಗಳು",m3:"ಸಂಪೂರ್ಣ ಗೌಪ್ಯ",mMin:"~4",
+    langPick:"ನಿಮ್ಮ ಭಾಷೆಯನ್ನು ಆರಿಸಿ",
+    outroPill:"ಉತ್ತರ ದಾಖಲಾಗಿದೆ",outroA:"ಇಗೋ",outroB:"ಮುಗಿಯಿತು.",
+    outroP:"ಧನ್ಯವಾದಗಳು — ನಿಮ್ಮ ಉತ್ತರ ಉಳಿಸಲಾಗುತ್ತಿದೆ. ದಯವಿಟ್ಟು ಕಾಯಿರಿ.",
+    saving:"ನಿಮ್ಮ ಉತ್ತರ ಉಳಿಸಲಾಗುತ್ತಿದೆ…",saved:"✓ ಉಳಿಸಲಾಗಿದೆ. ಧನ್ಯವಾದಗಳು!",
+    saveErr:"ಉಳಿಸಲಾಗಲಿಲ್ಲ — ಸಂಪರ್ಕ ಪರಿಶೀಲಿಸಿ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.",retry:"ಮತ್ತೆ",
+    errOne:"ಮುಂದುವರಿಯಲು ಒಂದನ್ನು ಆರಿಸಿ.",errMulti:"ಕನಿಷ್ಠ ಆರಿಸಿ",errRank:"ನಿಮ್ಮ ಉನ್ನತ ಆಯ್ಕೆಗಳನ್ನು ಆರಿಸಿ",errMatrix:"ಪ್ರತಿ ಸಾಲಿಗೆ ಉತ್ತರಿಸಿ.",
+    ph10:"ಉದಾ. ಸ್ಟೆಬಿಲೈಸರ್, ವಿಶ್ವಾಸಾರ್ಹ, ಅಪ್ಪನ ಆಯ್ಕೆ…",optionalSkip:"ಐಚ್ಛಿಕ — ಬಿಟ್ಟುಬಿಡಲು ಮುಂದುವರಿಸಿ.",
+    secContext:"ಸಂದರ್ಭ",secBig:"ಮುಖ್ಯ ಪ್ರಶ್ನೆ",secTrust:"ವಿಶ್ವಾಸ",secValue:"ನೀವು ಮೌಲ್ಯಯುತ",secBrand:"ಬ್ರಾಂಡ್",secRoad:"ಮುಂದಿನ ದಾರಿ",secYou:"ನಿಮ್ಮ ಬಗ್ಗೆ",
+  },
+  ml:{name:"മലയാളം",dir:"ltr",
+    brand:"V-GUARD",start:"തുടങ്ങുക",done:"പൂർത്തിയായി ✓",begin:"തുടങ്ങുക →",continue:"തുടരുക →",finish:"പൂർത്തിയാക്കുക →",back:"← പിന്നോട്ട്",
+    heroA:"യഥാർത്ഥത്തിൽ",heroEm:"ആരാണ്",heroB:"തിരഞ്ഞെടുത്തത്?",
+    heroP1:"നിങ്ങളുടെ വീട്ടിലെ ഓരോ ഉൽപ്പന്നവും ഒരു തീരുമാനമായിരുന്നു. ചിലത് നിങ്ങൾ തന്നെ തിരഞ്ഞെടുത്തു. ചിലത് ഇലക്ട്രീഷ്യൻ നിങ്ങളറിയാതെ തിരഞ്ഞെടുത്തു.",
+    heroP2a:"ഏതാണ് ഏതെന്ന് ഞങ്ങൾ കണ്ടെത്തുന്നു. ഇതിന് ഏകദേശം",heroP2b:"എടുക്കും, ഒരു സമയത്ത് ഒരു ചോദ്യം.",
+    m1:"വേഗത്തിലുള്ള ചോദ്യങ്ങൾ",m2:"മിനിറ്റ്",m3:"പൂർണ്ണ രഹസ്യം",mMin:"~4",
+    langPick:"നിങ്ങളുടെ ഭാഷ തിരഞ്ഞെടുക്കുക",
+    outroPill:"പ്രതികരണം രേഖപ്പെടുത്തി",outroA:"ഇതാ",outroB:"പൂർത്തിയായി.",
+    outroP:"നന്ദി — നിങ്ങളുടെ പ്രതികരണം സേവ് ചെയ്യുന്നു. ദയവായി കാത്തിരിക്കുക.",
+    saving:"നിങ്ങളുടെ പ്രതികരണം സേവ് ചെയ്യുന്നു…",saved:"✓ സേവ് ചെയ്തു. നന്ദി!",
+    saveErr:"സേവ് ചെയ്യാനായില്ല — കണക്ഷൻ പരിശോധിച്ച് വീണ്ടും ശ്രമിക്കുക.",retry:"വീണ്ടും",
+    errOne:"തുടരാൻ ഒന്ന് തിരഞ്ഞെടുക്കുക.",errMulti:"കുറഞ്ഞത് തിരഞ്ഞെടുക്കുക",errRank:"നിങ്ങളുടെ മുൻഗണനകൾ തിരഞ്ഞെടുക്കുക",errMatrix:"ഓരോ വരിക്കും ഉത്തരം നൽകുക.",
+    ph10:"ഉദാ. സ്റ്റെബിലൈസർ, വിശ്വസനീയം, അച്ഛന്റെ തിരഞ്ഞെടുപ്പ്…",optionalSkip:"ഐച്ഛികം — ഒഴിവാക്കാൻ തുടരുക.",
+    secContext:"സന്ദർഭം",secBig:"പ്രധാന ചോദ്യം",secTrust:"വിശ്വാസം",secValue:"നിങ്ങൾ വിലമതിക്കുന്നത്",secBrand:"ബ്രാൻഡ്",secRoad:"മുന്നോട്ടുള്ള വഴി",secYou:"നിങ്ങളെക്കുറിച്ച്",
+  },
+  mr:{name:"मराठी",dir:"ltr",
+    brand:"V-GUARD",start:"सुरू",done:"पूर्ण ✓",begin:"सुरू करा →",continue:"पुढे जा →",finish:"समाप्त →",back:"← मागे",
+    heroA:"खरंच",heroEm:"कोणी",heroB:"निवडलं?",
+    heroP1:"तुमच्या घरातील प्रत्येक वस्तू एक निर्णय होता. काही तुम्ही स्वतः निवडल्या. काही इलेक्ट्रिशियनने तुमच्या नकळत निवडल्या.",
+    heroP2a:"कोणते कोणते हे आम्ही शोधत आहोत. यास सुमारे",heroP2b:"लागतात, एका वेळी एक प्रश्न.",
+    m1:"झटपट प्रश्न",m2:"मिनिटे",m3:"पूर्णतः गुप्त",mMin:"~4",
+    langPick:"तुमची भाषा निवडा",
+    outroPill:"उत्तर नोंदवले",outroA:"हे झालं",outroB:"पूर्ण.",
+    outroP:"धन्यवाद — तुमचे उत्तर जतन होत आहे. कृपया प्रतीक्षा करा.",
+    saving:"तुमचे उत्तर जतन होत आहे…",saved:"✓ जतन झाले. धन्यवाद!",
+    saveErr:"जतन करता आले नाही — कनेक्शन तपासा आणि पुन्हा प्रयत्न करा.",retry:"पुन्हा",
+    errOne:"पुढे जाण्यासाठी एक निवडा.",errMulti:"किमान निवडा",errRank:"तुमच्या शीर्ष निवडा",errMatrix:"प्रत्येक ओळीचे उत्तर द्या.",
+    ph10:"उदा. स्टॅबिलायझर, विश्वासार्ह, वडिलांची पसंत…",optionalSkip:"पर्यायी — वगळण्यासाठी पुढे जा.",
+    secContext:"संदर्भ",secBig:"मुख्य प्रश्न",secTrust:"विश्वास",secValue:"तुम्हाला महत्त्वाचे",secBrand:"ब्रँड",secRoad:"पुढील वाटचाल",secYou:"तुमच्याबद्दल",
+  },
+  bn:{name:"বাংলা",dir:"ltr",
+    brand:"V-GUARD",start:"শুরু",done:"সম্পন্ন ✓",begin:"শুরু করুন →",continue:"এগিয়ে যান →",finish:"সমাপ্ত →",back:"← পিছনে",
+    heroA:"আসলে",heroEm:"কে",heroB:"বেছে নিয়েছে?",
+    heroP1:"আপনার ঘরের প্রতিটি জিনিস একটি সিদ্ধান্ত ছিল। কিছু আপনি নিজে বেছেছেন। কিছু ইলেকট্রিশিয়ান আপনার অজান্তেই বেছে দিয়েছেন।",
+    heroP2a:"কোনটা কী তা আমরা খুঁজে বের করছি। এতে প্রায়",heroP2b:"লাগে, একবারে একটি প্রশ্ন।",
+    m1:"দ্রুত প্রশ্ন",m2:"মিনিট",m3:"সম্পূর্ণ গোপন",mMin:"~4",
+    langPick:"আপনার ভাষা নির্বাচন করুন",
+    outroPill:"উত্তর নথিভুক্ত হয়েছে",outroA:"এই তো",outroB:"সম্পূর্ণ।",
+    outroP:"ধন্যবাদ — আপনার উত্তর সংরক্ষণ করা হচ্ছে। অনুগ্রহ করে অপেক্ষা করুন।",
+    saving:"আপনার উত্তর সংরক্ষণ করা হচ্ছে…",saved:"✓ সংরক্ষিত হয়েছে। ধন্যবাদ!",
+    saveErr:"সংরক্ষণ করা যায়নি — সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।",retry:"আবার",
+    errOne:"এগিয়ে যেতে একটি নির্বাচন করুন।",errMulti:"অন্তত নির্বাচন করুন",errRank:"আপনার শীর্ষ পছন্দ নির্বাচন করুন",errMatrix:"প্রতিটি সারির উত্তর দিন।",
+    ph10:"যেমন স্টেবিলাইজার, নির্ভরযোগ্য, বাবার পছন্দ…",optionalSkip:"ঐচ্ছিক — এড়াতে এগিয়ে যান।",
+    secContext:"প্রসঙ্গ",secBig:"মূল প্রশ্ন",secTrust:"আস্থা",secValue:"আপনি যা মূল্য দেন",secBrand:"ব্র্যান্ড",secRoad:"সামনের পথ",secYou:"আপনার সম্পর্কে",
+  },
+};
+/* Question + option text in all languages. Structure:
+   TX.<qid>.<lang> = {q, sub?, hint?, options:{<valueId>:label}}
+   Product & influencer labels are shared (PROD/INF).
+   VALUE IDs never change across languages — that's what gets stored. */
+
+const PROD = {
+  wiring:   {em:'🔌', en:'Wiring / cables', hi:'तार / केबल', ta:'கம்பி / கேபிள்', te:'వైరింగ్ / కేబుల్స్', kn:'ವೈರಿಂಗ್ / ಕೇಬಲ್', ml:'വയറിംഗ് / കേബിൾ', mr:'वायरिंग / केबल', bn:'তার / কেবল'},
+  switches: {em:'🎚️', en:'Switches / modular boards', hi:'स्विच / मॉड्यूलर बोर्ड', ta:'சுவிட்ச் / மாடுலர் போர்டு', te:'స్విచ్‌లు / మాడ్యులర్ బోర్డులు', kn:'ಸ್ವಿಚ್ / ಮಾಡ್ಯುಲರ್ ಬೋರ್ಡ್', ml:'സ്വിച്ച് / മോഡുലാർ ബോർഡ്', mr:'स्विच / मॉड्युलर बोर्ड', bn:'সুইচ / মডুলার বোর্ড'},
+  switchgear:{em:'🧰', en:'MCB / switchgear / DB box', hi:'MCB / स्विचगियर / DB बॉक्स', ta:'MCB / சுவிட்ச்கியர் / DB பாக்ஸ்', te:'MCB / స్విచ్‌గేర్ / DB బాక్స్', kn:'MCB / ಸ್ವಿಚ್‌ಗಿಯರ್ / DB ಬಾಕ್ಸ್', ml:'MCB / സ്വിച്ച്ഗിയർ / DB ബോക്സ്', mr:'MCB / स्विचगियर / DB बॉक्स', bn:'MCB / সুইচগিয়ার / DB বক্স'},
+  stab:     {em:'📟', en:'Voltage stabiliser', hi:'वोल्टेज स्टेबलाइज़र', ta:'வோல்டேஜ் ஸ்டெபிலைசர்', te:'వోల్టేజ్ స్టెబిలైజర్', kn:'ವೋಲ್ಟೇಜ್ ಸ್ಟೆಬಿಲೈಸರ್', ml:'വോൾട്ടേജ് സ്റ്റെബിലൈസർ', mr:'व्होल्टेज स्टॅबिलायझर', bn:'ভোল্টেজ স্টেবিলাইজার'},
+  inverter: {em:'🔋', en:'Inverter / UPS', hi:'इन्वर्टर / UPS', ta:'இன்வர்ட்டர் / UPS', te:'ఇన్వర్టర్ / UPS', kn:'ಇನ್ವರ್ಟರ್ / UPS', ml:'ഇൻവെർട്ടർ / UPS', mr:'इन्व्हर्टर / UPS', bn:'ইনভার্টার / UPS'},
+  fan:      {em:'🌀', en:'Ceiling / other fans', hi:'पंखे', ta:'மின்விசிறி', te:'ఫ్యాన్లు', kn:'ಫ್ಯಾನ್', ml:'ഫാൻ', mr:'पंखे', bn:'ফ্যান'},
+  cooler:   {em:'❄️', en:'Air cooler', hi:'एयर कूलर', ta:'ஏர் கூலர்', te:'ఎయిర్ కూలర్', kn:'ಏರ್ ಕೂಲರ್', ml:'എയർ കൂളർ', mr:'एअर कूलर', bn:'এয়ার কুলার'},
+  purifier: {em:'💧', en:'Water purifier', hi:'वाटर प्यूरीफायर', ta:'தண்ணீர் சுத்திகரிப்பான்', te:'వాటర్ ప్యూరిఫయర్', kn:'ವಾಟರ್ ಪ್ಯೂರಿಫೈಯರ್', ml:'വാട്ടർ പ്യൂരിഫയർ', mr:'वॉटर प्युरिफायर', bn:'ওয়াটার পিউরিফায়ার'},
+  geyser:   {em:'♨️', en:'Water heater / geyser', hi:'गीज़र / वाटर हीटर', ta:'கீசர் / வாட்டர் ஹீட்டர்', te:'గీజర్ / వాటర్ హీటర్', kn:'ಗೀಸರ್ / ವಾಟರ್ ಹೀಟರ್', ml:'ഗീസർ / വാട്ടർ ഹീറ്റർ', mr:'गीझर / वॉटर हीटर', bn:'গিজার / ওয়াটার হিটার'},
+  lighting: {em:'💡', en:'Lighting', hi:'लाइटिंग', ta:'விளக்குகள்', te:'లైటింగ్', kn:'ಲೈಟಿಂಗ್', ml:'ലൈറ്റിംഗ്', mr:'लायटिंग', bn:'লাইটিং'},
+};
+
+const INF = {
+  self:      {en:'I / my family', hi:'मैं / मेरा परिवार', ta:'நான் / என் குடும்பம்', te:'నేను / నా కుటుంబం', kn:'ನಾನು / ನನ್ನ ಕುಟುಂಬ', ml:'ഞാൻ / കുടുംബം', mr:'मी / माझे कुटुंब', bn:'আমি / আমার পরিবার'},
+  electrician:{en:'Electrician / contractor', hi:'इलेक्ट्रिशियन / ठेकेदार', ta:'மின்சாரி / ஒப்பந்தக்காரர்', te:'ఎలక్ట్రీషియన్ / కాంట్రాక్టర్', kn:'ಎಲೆಕ್ಟ್ರೀಷಿಯನ್ / ಗುತ್ತಿಗೆದಾರ', ml:'ഇലക്ട്രീഷ്യൻ / കോൺട്രാക്ടർ', mr:'इलेक्ट्रिशियन / कंत्राटदार', bn:'ইলেকট্রিশিয়ান / ঠিকাদার'},
+  retailer:  {en:'Retailer / shopkeeper', hi:'दुकानदार', ta:'கடைக்காரர்', te:'దుకాణదారు', kn:'ಅಂಗಡಿಯವರು', ml:'കടയുടമ', mr:'दुकानदार', bn:'দোকানদার'},
+  online:    {en:'Online reviews', hi:'ऑनलाइन रिव्यू', ta:'ஆன்லைன் விமர்சனங்கள்', te:'ఆన్‌లైన్ రివ్యూలు', kn:'ಆನ್‌ಲೈನ್ ವಿಮರ್ಶೆಗಳು', ml:'ഓൺലൈൻ റിവ്യൂ', mr:'ऑनलाइन पुनरावलोकने', bn:'অনলাইন রিভিউ'},
+  builder:   {en:'Builder / architect', hi:'बिल्डर / आर्किटेक्ट', ta:'கட்டுநர் / கட்டிடக்கலைஞர்', te:'బిల్డర్ / ఆర్కిటెక్ట్', kn:'ಬಿಲ್ಡರ್ / ವಾಸ್ತುಶಿಲ್ಪಿ', ml:'ബിൽഡർ / ആർക്കിടെക്ട്', mr:'बिल्डर / वास्तुविशारद', bn:'বিল্ডার / স্থপতি'},
+  forget:    {en:"Don't recall", hi:'याद नहीं', ta:'நினைவில்லை', te:'గుర్తు లేదు', kn:'ನೆನಪಿಲ್ಲ', ml:'ഓർമ്മയില്ല', mr:'आठवत नाही', bn:'মনে নেই'},
+};
+
+/* Per-question text. To keep this readable, only q + sub + option labels are
+   translated. Option value IDs are the keys inside each options object. */
+const TX = {
+  q1:{ opts:['wiring','switches','switchgear','stab','inverter','fan','cooler','purifier','geyser','lighting'], // uses PROD
+    en:{q:'Which of these have you bought — or helped choose — in the last 3 years?', sub:"Pick everything that applies. We'll only ask about the ones you select."},
+    hi:{q:'इनमें से क्या आपने पिछले 3 वर्षों में खरीदा — या चुनने में मदद की?', sub:'जो भी लागू हो चुनें। हम केवल आपके चुने हुए के बारे में पूछेंगे।'},
+    ta:{q:'கடந்த 3 ஆண்டுகளில் இவற்றில் எதை நீங்கள் வாங்கினீர்கள் — அல்லது தேர்வு செய்ய உதவினீர்கள்?', sub:'பொருந்தும் அனைத்தையும் தேர்வுசெய்க. நீங்கள் தேர்ந்தெடுத்தவை பற்றி மட்டுமே கேட்போம்.'},
+    te:{q:'గత 3 సంవత్సరాలలో వీటిలో ఏవి కొన్నారు — లేదా ఎంచుకోవడంలో సహాయపడ్డారు?', sub:'వర్తించే అన్నింటినీ ఎంచుకోండి. మీరు ఎంచుకున్నవి గురించి మాత్రమే అడుగుతాము.'},
+    kn:{q:'ಕಳೆದ 3 ವರ್ಷಗಳಲ್ಲಿ ಇವುಗಳಲ್ಲಿ ಯಾವುದನ್ನು ಖರೀದಿಸಿದ್ದೀರಿ — ಅಥವಾ ಆರಿಸಲು ಸಹಾಯ ಮಾಡಿದ್ದೀರಿ?', sub:'ಅನ್ವಯಿಸುವ ಎಲ್ಲವನ್ನೂ ಆರಿಸಿ. ನೀವು ಆರಿಸಿದವುಗಳ ಬಗ್ಗೆ ಮಾತ್ರ ಕೇಳುತ್ತೇವೆ.'},
+    ml:{q:'കഴിഞ്ഞ 3 വർഷത്തിനുള്ളിൽ ഇവയിൽ ഏതൊക്കെ വാങ്ങി — അല്ലെങ്കിൽ തിരഞ്ഞെടുക്കാൻ സഹായിച്ചു?', sub:'ബാധകമായ എല്ലാം തിരഞ്ഞെടുക്കുക. നിങ്ങൾ തിരഞ്ഞെടുത്തവയെക്കുറിച്ച് മാത്രമേ ചോദിക്കൂ.'},
+    mr:{q:'गेल्या 3 वर्षांत यापैकी काय खरेदी केले — किंवा निवडण्यास मदत केली?', sub:'लागू होणारे सर्व निवडा. आम्ही फक्त तुम्ही निवडलेल्याबद्दल विचारू.'},
+    bn:{q:'গত ৩ বছরে এর মধ্যে কোনটি কিনেছেন — বা বেছে নিতে সাহায্য করেছেন?', sub:'প্রযোজ্য সব নির্বাচন করুন। আমরা শুধু আপনার নির্বাচিতগুলি সম্পর্কে জিজ্ঞাসা করব।'},
+  },
+  q2:{ opts:{newbuild:'🏗️',reno:'🛠️',repair:'🔧',finished:'📦'},
+    labels:{
+      newbuild:{en:'New house construction',hi:'नए घर का निर्माण',ta:'புதிய வீடு கட்டுமானம்',te:'కొత్త ఇల్లు నిర్మాణం',kn:'ಹೊಸ ಮನೆ ನಿರ್ಮಾಣ',ml:'പുതിയ വീട് നിർമ്മാണം',mr:'नवीन घर बांधकाम',bn:'নতুন বাড়ি নির্মাণ'},
+      reno:{en:'Major renovation with wiring',hi:'वायरिंग के साथ बड़ा नवीनीकरण',ta:'கம்பியுடன் பெரிய புதுப்பித்தல்',te:'వైరింగ్‌తో పెద్ద పునరుద్ధరణ',kn:'ವೈರಿಂಗ್‌ನೊಂದಿಗೆ ದೊಡ್ಡ ನವೀಕರಣ',ml:'വയറിംഗോടെ വലിയ നവീകരണം',mr:'वायरिंगसह मोठे नूतनीकरण',bn:'ওয়্যারিং সহ বড় সংস্কার'},
+      repair:{en:'Minor repair with an electrician',hi:'इलेक्ट्रिशियन से छोटी मरम्मत',ta:'மின்சாரியுடன் சிறிய பழுது',te:'ఎలక్ట్రీషియన్‌తో చిన్న మరమ్మతు',kn:'ಎಲೆಕ್ಟ್ರೀಷಿಯನ್‌ನೊಂದಿಗೆ ಸಣ್ಣ ದುರಸ್ತಿ',ml:'ഇലക്ട്രീഷ്യനുമായി ചെറിയ അറ്റകുറ്റപ്പണി',mr:'इलेक्ट्रिशियनसह किरकोळ दुरुस्ती',bn:'ইলেকট্রিশিয়ান দিয়ে ছোট মেরামত'},
+      finished:{en:'None — I bought finished products only',hi:'कोई नहीं — मैंने केवल तैयार उत्पाद खरीदे',ta:'எதுவும் இல்லை — முடிக்கப்பட்ட பொருட்களை மட்டுமே வாங்கினேன்',te:'ఏదీ లేదు — పూర్తయిన ఉత్పత్తులను మాత్రమే కొన్నాను',kn:'ಯಾವುದೂ ಇಲ್ಲ — ಸಿದ್ಧ ಉತ್ಪನ್ನಗಳನ್ನು ಮಾತ್ರ ಖರೀದಿಸಿದೆ',ml:'ഒന്നുമില്ല — പൂർത്തിയായ ഉൽപ്പന്നങ്ങൾ മാത്രം വാങ്ങി',mr:'काहीही नाही — मी फक्त तयार उत्पादने घेतली',bn:'কোনটি নয় — শুধু তৈরি পণ্য কিনেছি'},
+    },
+    en:{q:'Did your home go through any electrical work in that time?',sub:'This helps us understand whether an electrician was around when you decided.'},
+    hi:{q:'क्या उस दौरान आपके घर में कोई बिजली का काम हुआ?',sub:'इससे हमें समझ आता है कि निर्णय के समय इलेक्ट्रिशियन मौजूद था या नहीं।'},
+    ta:{q:'அந்த நேரத்தில் உங்கள் வீட்டில் ஏதேனும் மின் வேலை நடந்ததா?',sub:'நீங்கள் முடிவெடுத்தபோது மின்சாரி இருந்தாரா என்பதை இது புரிய உதவுகிறது.'},
+    te:{q:'ఆ సమయంలో మీ ఇంట్లో ఏదైనా విద్యుత్ పని జరిగిందా?',sub:'మీరు నిర్ణయించేటప్పుడు ఎలక్ట్రీషియన్ ఉన్నారా అని అర్థం చేసుకోవడానికి ఇది సహాయపడుతుంది.'},
+    kn:{q:'ಆ ಸಮಯದಲ್ಲಿ ನಿಮ್ಮ ಮನೆಯಲ್ಲಿ ಯಾವುದೇ ವಿದ್ಯುತ್ ಕೆಲಸ ನಡೆಯಿತೇ?',sub:'ನೀವು ನಿರ್ಧರಿಸುವಾಗ ಎಲೆಕ್ಟ್ರೀಷಿಯನ್ ಇದ್ದರೇ ಎಂದು ಅರ್ಥಮಾಡಿಕೊಳ್ಳಲು ಇದು ಸಹಾಯ ಮಾಡುತ್ತದೆ.'},
+    ml:{q:'ആ സമയത്ത് നിങ്ങളുടെ വീട്ടിൽ എന്തെങ്കിലും വൈദ്യുത ജോലി നടന്നോ?',sub:'നിങ്ങൾ തീരുമാനിക്കുമ്പോൾ ഇലക്ട്രീഷ്യൻ ഉണ്ടായിരുന്നോ എന്ന് മനസ്സിലാക്കാൻ ഇത് സഹായിക്കുന്നു.'},
+    mr:{q:'त्या काळात तुमच्या घरात काही विद्युत काम झाले का?',sub:'तुम्ही निर्णय घेताना इलेक्ट्रिशियन होता का हे समजण्यास मदत होते.'},
+    bn:{q:'সেই সময়ে আপনার বাড়িতে কোনো বৈদ্যুতিক কাজ হয়েছিল?',sub:'আপনি সিদ্ধান্ত নেওয়ার সময় ইলেকট্রিশিয়ান ছিলেন কিনা তা বুঝতে সাহায্য করে।'},
+  },
+  q3:{ opts:{south:'🌴',west:'🌇',north:'🏔️',east:'🌊',central:'🗺️'},
+    labels:{
+      south:{en:'South India',hi:'दक्षिण भारत',ta:'தென் இந்தியா',te:'దక్షిణ భారతం',kn:'ದಕ್ಷಿಣ ಭಾರತ',ml:'ദക്ഷിണേന്ത്യ',mr:'दक्षिण भारत',bn:'দক্ষিণ ভারত'},
+      west:{en:'West',hi:'पश्चिम',ta:'மேற்கு',te:'పశ్చిమం',kn:'ಪಶ್ಚಿಮ',ml:'പടിഞ്ഞാറ്',mr:'पश्चिम',bn:'পশ্চিম'},
+      north:{en:'North',hi:'उत्तर',ta:'வடக்கு',te:'ఉత్తరం',kn:'ಉತ್ತರ',ml:'വടക്ക്',mr:'उत्तर',bn:'উত্তর'},
+      east:{en:'East',hi:'पूर्व',ta:'கிழக்கு',te:'తూర్పు',kn:'ಪೂರ್ವ',ml:'കിഴക്ക്',mr:'पूर्व',bn:'পূর্ব'},
+      central:{en:'Central / North-East',hi:'मध्य / पूर्वोत्तर',ta:'மத்திய / வடகிழக்கு',te:'మధ్య / ఈశాన్య',kn:'ಮಧ್ಯ / ಈಶಾನ್ಯ',ml:'മധ്യ / വടക്കുകിഴക്ക്',mr:'मध्य / ईशान्य',bn:'মধ্য / উত্তর-পূর্ব'},
+    },
+    en:{q:"Where's your home?",sub:'V-Guard is strong in the South and expanding elsewhere — region matters to us.'},
+    hi:{q:'आपका घर कहाँ है?',sub:'V-Guard दक्षिण में मजबूत है और अन्यत्र विस्तार कर रहा है — क्षेत्र हमारे लिए मायने रखता है।'},
+    ta:{q:'உங்கள் வீடு எங்கே?',sub:'V-Guard தெற்கில் வலிமையானது, மற்ற இடங்களில் விரிவடைகிறது — பகுதி எங்களுக்கு முக்கியம்.'},
+    te:{q:'మీ ఇల్లు ఎక్కడ?',sub:'V-Guard దక్షిణంలో బలంగా ఉంది, ఇతర ప్రాంతాలకు విస్తరిస్తోంది — ప్రాంతం మాకు ముఖ్యం.'},
+    kn:{q:'ನಿಮ್ಮ ಮನೆ ಎಲ್ಲಿದೆ?',sub:'V-Guard ದಕ್ಷಿಣದಲ್ಲಿ ಬಲಶಾಲಿ, ಇತರೆಡೆ ವಿಸ್ತರಿಸುತ್ತಿದೆ — ಪ್ರದೇಶ ನಮಗೆ ಮುಖ್ಯ.'},
+    ml:{q:'നിങ്ങളുടെ വീട് എവിടെ?',sub:'V-Guard തെക്ക് ശക്തമാണ്, മറ്റിടങ്ങളിൽ വ്യാപിക്കുന്നു — പ്രദേശം ഞങ്ങൾക്ക് പ്രധാനം.'},
+    mr:{q:'तुमचे घर कुठे आहे?',sub:'V-Guard दक्षिणेत मजबूत आहे आणि इतरत्र विस्तारत आहे — प्रदेश आमच्यासाठी महत्त्वाचा आहे.'},
+    bn:{q:'আপনার বাড়ি কোথায়?',sub:'V-Guard দক্ষিণে শক্তিশালী এবং অন্যত্র বিস্তার করছে — অঞ্চল আমাদের কাছে গুরুত্বপূর্ণ।'},
+  },
+  q4:{ // matrix, uses PROD rows + INF chips
+    en:{q:'For each product — who really chose the brand?',sub:'Not the shop you went to. The brand. Think back to whose voice actually decided it.',hint:'This one matters most. Tap the answer for each item.'},
+    hi:{q:'हर उत्पाद के लिए — ब्रांड असल में किसने चुना?',sub:'वह दुकान नहीं जहाँ आप गए। ब्रांड। सोचिए किसकी बात ने असल में तय किया।',hint:'यह सबसे महत्वपूर्ण है। हर वस्तु के लिए उत्तर चुनें।'},
+    ta:{q:'ஒவ்வொரு பொருளுக்கும் — பிராண்டை உண்மையில் யார் தேர்ந்தெடுத்தார்?',sub:'நீங்கள் சென்ற கடை அல்ல. பிராண்ட். யாருடைய குரல் உண்மையில் தீர்மானித்தது என்று யோசியுங்கள்.',hint:'இது மிக முக்கியம். ஒவ்வொரு பொருளுக்கும் பதிலைத் தட்டவும்.'},
+    te:{q:'ప్రతి ఉత్పత్తికి — బ్రాండ్‌ను నిజంగా ఎవరు ఎంచుకున్నారు?',sub:'మీరు వెళ్లిన దుకాణం కాదు. బ్రాండ్. ఎవరి మాట నిజంగా నిర్ణయించిందో ఆలోచించండి.',hint:'ఇది చాలా ముఖ్యం. ప్రతి అంశానికి సమాధానం నొక్కండి.'},
+    kn:{q:'ಪ್ರತಿ ಉತ್ಪನ್ನಕ್ಕೆ — ಬ್ರಾಂಡ್ ಅನ್ನು ನಿಜವಾಗಿ ಯಾರು ಆರಿಸಿದರು?',sub:'ನೀವು ಹೋದ ಅಂಗಡಿಯಲ್ಲ. ಬ್ರಾಂಡ್. ಯಾರ ಮಾತು ನಿಜವಾಗಿ ನಿರ್ಧರಿಸಿತು ಎಂದು ಯೋಚಿಸಿ.',hint:'ಇದು ಅತ್ಯಂತ ಮುಖ್ಯ. ಪ್ರತಿ ವಸ್ತುವಿಗೆ ಉತ್ತರ ಟ್ಯಾಪ್ ಮಾಡಿ.'},
+    ml:{q:'ഓരോ ഉൽപ്പന്നത്തിനും — ബ്രാൻഡ് യഥാർത്ഥത്തിൽ ആരാണ് തിരഞ്ഞെടുത്തത്?',sub:'നിങ്ങൾ പോയ കട അല്ല. ബ്രാൻഡ്. ആരുടെ വാക്കാണ് യഥാർത്ഥത്തിൽ തീരുമാനിച്ചതെന്ന് ചിന്തിക്കൂ.',hint:'ഇത് ഏറ്റവും പ്രധാനം. ഓരോ ഇനത്തിനും ഉത്തരം ടാപ്പ് ചെയ്യുക.'},
+    mr:{q:'प्रत्येक उत्पादासाठी — ब्रँड खरंच कोणी निवडला?',sub:'तुम्ही गेलेले दुकान नाही. ब्रँड. कोणाच्या शब्दाने खरंच ठरवले याचा विचार करा.',hint:'हे सर्वात महत्त्वाचे आहे. प्रत्येक वस्तूसाठी उत्तर निवडा.'},
+    bn:{q:'প্রতিটি পণ্যের জন্য — ব্র্যান্ড আসলে কে বেছেছে?',sub:'আপনি যে দোকানে গেছেন তা নয়। ব্র্যান্ড। কার কথায় আসলে সিদ্ধান্ত হয়েছিল ভাবুন।',hint:'এটি সবচেয়ে গুরুত্বপূর্ণ। প্রতিটি আইটেমের উত্তর ট্যাপ করুন।'},
+  },
+  q5:{ opts:{completely:'🟢',mostly:'🟡',somewhat:'🟠',notatall:'🔴',none:'⚪'},
+    labels:{
+      completely:{en:'Completely — I buy what they suggest',hi:'पूरी तरह — जो वे कहें वही खरीदता हूँ',ta:'முழுமையாக — அவர் சொல்வதை வாங்குகிறேன்',te:'పూర్తిగా — వారు చెప్పింది కొంటాను',kn:'ಸಂಪೂರ್ಣವಾಗಿ — ಅವರು ಹೇಳಿದ್ದನ್ನು ಖರೀದಿಸುತ್ತೇನೆ',ml:'പൂർണ്ണമായും — അവർ പറയുന്നത് വാങ്ങുന്നു',mr:'पूर्णपणे — ते सांगतील ते घेतो',bn:'সম্পূর্ণ — তারা যা বলে তাই কিনি'},
+      mostly:{en:'Mostly',hi:'ज़्यादातर',ta:'பெரும்பாலும்',te:'ఎక్కువగా',kn:'ಹೆಚ್ಚಾಗಿ',ml:'മിക്കവാറും',mr:'बहुतांश',bn:'বেশিরভাগ'},
+      somewhat:{en:'Somewhat',hi:'कुछ हद तक',ta:'ஓரளவு',te:'కొంతవరకు',kn:'ಸ್ವಲ್ಪ',ml:'കുറച്ച്',mr:'काही प्रमाणात',bn:'কিছুটা'},
+      notatall:{en:'Not at all',hi:'बिल्कुल नहीं',ta:'இல்லவே இல்லை',te:'అస్సలు కాదు',kn:'ಇಲ್ಲವೇ ಇಲ್ಲ',ml:'ഒട്ടും ഇല്ല',mr:'अजिबात नाही',bn:'একেবারেই না'},
+      none:{en:'No electrician was ever involved',hi:'कोई इलेक्ट्रिशियन शामिल नहीं था',ta:'மின்சாரி யாரும் ஈடுபடவில்லை',te:'ఎలక్ట్రీషియన్ ఎవరూ పాల్గొనలేదు',kn:'ಯಾವ ಎಲೆಕ್ಟ್ರೀಷಿಯನ್ ಸಹ ಭಾಗಿಯಾಗಿಲ್ಲ',ml:'ഒരു ഇലക്ട്രീഷ്യനും ഉൾപ്പെട്ടിട്ടില്ല',mr:'कोणताही इलेक्ट्रिशियन सहभागी नव्हता',bn:'কোনো ইলেকট্রিশিয়ান জড়িত ছিল না'},
+    },
+    en:{q:'When an electrician recommends a brand, how much do you trust it?'},
+    hi:{q:'जब इलेक्ट्रिशियन कोई ब्रांड सुझाता है, तो आप कितना भरोसा करते हैं?'},
+    ta:{q:'மின்சாரி ஒரு பிராண்டை பரிந்துரைக்கும்போது, எவ்வளவு நம்புகிறீர்கள்?'},
+    te:{q:'ఎలక్ట్రీషియన్ ఒక బ్రాండ్‌ను సిఫార్సు చేసినప్పుడు, మీరు ఎంత నమ్ముతారు?'},
+    kn:{q:'ಎಲೆಕ್ಟ್ರೀಷಿಯನ್ ಒಂದು ಬ್ರಾಂಡ್ ಶಿಫಾರಸು ಮಾಡಿದಾಗ, ನೀವು ಎಷ್ಟು ನಂಬುತ್ತೀರಿ?'},
+    ml:{q:'ഒരു ഇലക്ട്രീഷ്യൻ ഒരു ബ്രാൻഡ് ശുപാർശ ചെയ്യുമ്പോൾ, നിങ്ങൾ എത്ര വിശ്വസിക്കുന്നു?'},
+    mr:{q:'इलेक्ट्रिशियन एखादा ब्रँड सुचवतो तेव्हा तुम्ही किती विश्वास ठेवता?'},
+    bn:{q:'একজন ইলেকট্রিশিয়ান যখন একটি ব্র্যান্ড সুপারিশ করেন, আপনি কতটা বিশ্বাস করেন?'},
+  },
+  q6:{ opts:{safe:'🛡️',install:'🔩',unknow:'🤷',easy:'😌',dont:'🙅'}, max:2,
+    labels:{
+      safe:{en:"They know what's safe and reliable",hi:'वे जानते हैं क्या सुरक्षित और भरोसेमंद है',ta:'எது பாதுகாப்பானது என அவர் அறிவார்',te:'ఏది సురక్షితమో వారికి తెలుసు',kn:'ಯಾವುದು ಸುರಕ್ಷಿತ ಎಂದು ಅವರಿಗೆ ಗೊತ್ತು',ml:'എന്താണ് സുരക്ഷിതമെന്ന് അവർക്കറിയാം',mr:'काय सुरक्षित आहे हे त्यांना माहीत आहे',bn:'কোনটা নিরাপদ তারা জানে'},
+      install:{en:'They install it, so they should pick',hi:'वे लगाते हैं, तो उन्हें चुनना चाहिए',ta:'அவர் நிறுவுவதால், அவரே தேர்வு செய்யட்டும்',te:'వారు అమరుస్తారు, కాబట్టి వారే ఎంచుకోవాలి',kn:'ಅವರು ಅಳವಡಿಸುತ್ತಾರೆ, ಆದ್ದರಿಂದ ಅವರೇ ಆರಿಸಲಿ',ml:'അവർ ഘടിപ്പിക്കുന്നു, അതിനാൽ അവർ തിരഞ്ഞെടുക്കട്ടെ',mr:'ते बसवतात, म्हणून त्यांनी निवडावे',bn:'তারা লাগায়, তাই তারাই বাছুক'},
+      unknow:{en:"I don't know these products well",hi:'मैं इन उत्पादों को ठीक से नहीं जानता',ta:'இந்தப் பொருட்களை நான் நன்கு அறியேன்',te:'ఈ ఉత్పత్తులు నాకు బాగా తెలియవు',kn:'ಈ ಉತ್ಪನ್ನಗಳು ನನಗೆ ಚೆನ್ನಾಗಿ ಗೊತ್ತಿಲ್ಲ',ml:'ഈ ഉൽപ്പന്നങ്ങൾ എനിക്ക് നന്നായി അറിയില്ല',mr:'मला ही उत्पादने नीट माहीत नाहीत',bn:'এই পণ্যগুলো আমি ভালো জানি না'},
+      easy:{en:"It's easier than researching",hi:'यह खोजबीन से आसान है',ta:'ஆராய்வதை விட எளிது',te:'పరిశోధించడం కంటే సులభం',kn:'ಸಂಶೋಧನೆಗಿಂತ ಸುಲಭ',ml:'ഗവേഷണത്തേക്കാൾ എളുപ്പം',mr:'संशोधनापेक्षा सोपे',bn:'গবেষণার চেয়ে সহজ'},
+      dont:{en:"I don't follow their recommendation",hi:'मैं उनकी सलाह नहीं मानता',ta:'அவரது பரிந்துரையை நான் பின்பற்றுவதில்லை',te:'వారి సిఫార్సును నేను అనుసరించను',kn:'ಅವರ ಶಿಫಾರಸನ್ನು ನಾನು ಅನುಸರಿಸುವುದಿಲ್ಲ',ml:'അവരുടെ ശുപാർശ ഞാൻ പിന്തുടരില്ല',mr:'मी त्यांची शिफारस पाळत नाही',bn:'আমি তাদের সুপারিশ মানি না'},
+    },
+    en:{q:"Why do you go with an electrician's brand pick?",sub:'Choose up to two.'},
+    hi:{q:'आप इलेक्ट्रिशियन की ब्रांड पसंद क्यों मानते हैं?',sub:'दो तक चुनें।'},
+    ta:{q:'மின்சாரியின் பிராண்ட் தேர்வை ஏன் ஏற்கிறீர்கள்?',sub:'இரண்டு வரை தேர்வுசெய்க.'},
+    te:{q:'ఎలక్ట్రీషియన్ బ్రాండ్ ఎంపికను ఎందుకు అనుసరిస్తారు?',sub:'రెండు వరకు ఎంచుకోండి.'},
+    kn:{q:'ಎಲೆಕ್ಟ್ರೀಷಿಯನ್ ಬ್ರಾಂಡ್ ಆಯ್ಕೆಯನ್ನು ಏಕೆ ಒಪ್ಪುತ್ತೀರಿ?',sub:'ಎರಡರವರೆಗೆ ಆರಿಸಿ.'},
+    ml:{q:'ഇലക്ട്രീഷ്യന്റെ ബ്രാൻഡ് തിരഞ്ഞെടുപ്പ് എന്തുകൊണ്ട് സ്വീകരിക്കുന്നു?',sub:'രണ്ട് വരെ തിരഞ്ഞെടുക്കുക.'},
+    mr:{q:'इलेक्ट्रिशियनची ब्रँड निवड तुम्ही का स्वीकारता?',sub:'दोनपर्यंत निवडा.'},
+    bn:{q:'ইলেকট্রিশিয়ানের ব্র্যান্ড পছন্দ কেন মানেন?',sub:'দুটি পর্যন্ত নির্বাচন করুন।'},
+  },
+  q7:{ opts:{safety:'🛡️',brand:'🏅',price:'₹',elec:'👷',warranty:'📋',avail:'🏪'}, pick:3,
+    labels:{
+      safety:{en:"Safety — won't cause fire or damage",hi:'सुरक्षा — आग या नुकसान न हो',ta:'பாதுகாப்பு — தீ அல்லது சேதம் இல்லை',te:'భద్రత — మంట లేదా నష్టం కలిగించదు',kn:'ಸುರಕ್ಷತೆ — ಬೆಂಕಿ ಅಥವಾ ಹಾನಿ ಆಗದು',ml:'സുരക്ഷ — തീയോ കേടോ വരുത്തില്ല',mr:'सुरक्षा — आग किंवा नुकसान होणार नाही',bn:'নিরাপত্তা — আগুন বা ক্ষতি হবে না'},
+      brand:{en:'Brand reputation',hi:'ब्रांड की प्रतिष्ठा',ta:'பிராண்ட் நற்பெயர்',te:'బ్రాండ్ ప్రతిష్ఠ',kn:'ಬ್ರಾಂಡ್ ಖ್ಯಾತಿ',ml:'ബ്രാൻഡ് പ്രശസ്തി',mr:'ब्रँड प्रतिष्ठा',bn:'ব্র্যান্ড খ্যাতি'},
+      price:{en:'Price',hi:'कीमत',ta:'விலை',te:'ధర',kn:'ಬೆಲೆ',ml:'വില',mr:'किंमत',bn:'দাম'},
+      elec:{en:"Electrician's recommendation",hi:'इलेक्ट्रिशियन की सलाह',ta:'மின்சாரியின் பரிந்துரை',te:'ఎలక్ట్రీషియన్ సిఫార్సు',kn:'ಎಲೆಕ್ಟ್ರೀಷಿಯನ್ ಶಿಫಾರಸು',ml:'ഇലക്ട്രീഷ്യന്റെ ശുപാർശ',mr:'इलेक्ट्रिशियनची शिफारस',bn:'ইলেকট্রিশিয়ানের সুপারিশ'},
+      warranty:{en:'Warranty / after-sales',hi:'वारंटी / बिक्री के बाद सेवा',ta:'உத்தரவாதம் / விற்பனைக்குப் பின்',te:'వారంటీ / అమ్మకం తర్వాత',kn:'ವಾರಂಟಿ / ಮಾರಾಟದ ನಂತರ',ml:'വാറന്റി / വിൽപ്പനാനന്തരം',mr:'वॉरंटी / विक्रीनंतर',bn:'ওয়ারেন্টি / বিক্রয়োত্তর'},
+      avail:{en:'Available in a nearby shop',hi:'पास की दुकान में उपलब्ध',ta:'அருகிலுள்ள கடையில் கிடைக்கும்',te:'సమీప దుకాణంలో లభ్యం',kn:'ಹತ್ತಿರದ ಅಂಗಡಿಯಲ್ಲಿ ಲಭ್ಯ',ml:'അടുത്തുള്ള കടയിൽ ലഭ്യം',mr:'जवळच्या दुकानात उपलब्ध',bn:'কাছের দোকানে পাওয়া যায়'},
+    },
+    en:{q:'Buying safety-critical electricals — what matters most?',sub:'Tap your top 3, in order. Wiring, switchgear, a stabiliser — the things behind your walls.'},
+    hi:{q:'सुरक्षा-महत्वपूर्ण बिजली उत्पाद खरीदते समय — सबसे ज़रूरी क्या है?',sub:'अपने शीर्ष 3 क्रम में चुनें। तार, स्विचगियर, स्टेबलाइज़र — दीवारों के पीछे की चीज़ें।'},
+    ta:{q:'பாதுகாப்பு-முக்கிய மின் பொருட்களை வாங்கும்போது — எது முக்கியம்?',sub:'உங்கள் முதல் 3-ஐ வரிசையில் தட்டவும். கம்பி, சுவிட்ச்கியர், ஸ்டெபிலைசர்.'},
+    te:{q:'భద్రత-కీలక విద్యుత్ ఉత్పత్తులు కొనేటప్పుడు — ఏది ముఖ్యం?',sub:'మీ టాప్ 3ని క్రమంలో నొక్కండి. వైరింగ్, స్విచ్‌గేర్, స్టెబిలైజర్.'},
+    kn:{q:'ಸುರಕ್ಷತೆ-ನಿರ್ಣಾಯಕ ವಿದ್ಯುತ್ ಉತ್ಪನ್ನ ಖರೀದಿಸುವಾಗ — ಯಾವುದು ಮುಖ್ಯ?',sub:'ನಿಮ್ಮ ಟಾಪ್ 3 ಅನ್ನು ಕ್ರಮದಲ್ಲಿ ಟ್ಯಾಪ್ ಮಾಡಿ. ವೈರಿಂಗ್, ಸ್ವಿಚ್‌ಗಿಯರ್, ಸ್ಟೆಬಿಲೈಸರ್.'},
+    ml:{q:'സുരക്ഷാ-നിർണായക വൈദ്യുത ഉൽപ്പന്നം വാങ്ങുമ്പോൾ — എന്താണ് പ്രധാനം?',sub:'നിങ്ങളുടെ ടോപ് 3 ക്രമത്തിൽ ടാപ്പ് ചെയ്യുക. വയറിംഗ്, സ്വിച്ച്ഗിയർ, സ്റ്റെബിലൈസർ.'},
+    mr:{q:'सुरक्षा-महत्त्वाची विद्युत उत्पादने खरेदी करताना — काय महत्त्वाचे?',sub:'तुमचे टॉप 3 क्रमाने निवडा. वायरिंग, स्विचगियर, स्टॅबिलायझर.'},
+    bn:{q:'নিরাপত্তা-গুরুত্বপূর্ণ বৈদ্যুতিক পণ্য কেনার সময় — কী সবচেয়ে গুরুত্বপূর্ণ?',sub:'আপনার শীর্ষ ৩টি ক্রমানুসারে ট্যাপ করুন। ওয়্যারিং, সুইচগিয়ার, স্টেবিলাইজার।'},
+  },
+  q8:{ opts:{price:'₹',features:'✨',brand:'🏅',reviews:'⭐',energy:'🌱',service:'🧑‍🔧'}, pick:3,
+    labels:{
+      price:{en:'Price',hi:'कीमत',ta:'விலை',te:'ధర',kn:'ಬೆಲೆ',ml:'വില',mr:'किंमत',bn:'দাম'},
+      features:{en:'Features / looks',hi:'फीचर्स / लुक',ta:'அம்சங்கள் / தோற்றம்',te:'ఫీచర్లు / రూపం',kn:'ವೈಶಿಷ್ಟ್ಯ / ನೋಟ',ml:'സവിശേഷതകൾ / രൂപം',mr:'वैशिष्ट्ये / रूप',bn:'বৈশিষ্ট্য / চেহারা'},
+      brand:{en:'Brand reputation',hi:'ब्रांड की प्रतिष्ठा',ta:'பிராண்ட் நற்பெயர்',te:'బ్రాండ్ ప్రతిష్ఠ',kn:'ಬ್ರಾಂಡ್ ಖ್ಯಾತಿ',ml:'ബ്രാൻഡ് പ്രശസ്തി',mr:'ब्रँड प्रतिष्ठा',bn:'ব্র্যান্ড খ্যাতি'},
+      reviews:{en:'Online reviews',hi:'ऑनलाइन रिव्यू',ta:'ஆன்லைன் விமர்சனங்கள்',te:'ఆన్‌లైన్ రివ్యూలు',kn:'ಆನ್‌ಲೈನ್ ವಿಮರ್ಶೆ',ml:'ഓൺലൈൻ റിവ്യൂ',mr:'ऑनलाइन पुनरावलोकने',bn:'অনলাইন রিভিউ'},
+      energy:{en:'Energy efficiency',hi:'ऊर्जा दक्षता',ta:'ஆற்றல் திறன்',te:'శక్తి సామర్థ్యం',kn:'ಶಕ್ತಿ ದಕ್ಷತೆ',ml:'ഊർജ്ജ കാര്യക്ഷമത',mr:'ऊर्जा कार्यक्षमता',bn:'শক্তি সাশ্রয়'},
+      service:{en:'After-sales service',hi:'बिक्री के बाद सेवा',ta:'விற்பனைக்குப் பின் சேவை',te:'అమ్మకం తర్వాత సేవ',kn:'ಮಾರಾಟದ ನಂತರದ ಸೇವೆ',ml:'വിൽപ്പനാനന്തര സേവനം',mr:'विक्रीनंतर सेवा',bn:'বিক্রয়োত্তর সেবা'},
+    },
+    en:{q:'Now an everyday appliance — a fan, cooler, purifier. What matters most?',sub:'Again, your top 3 in order. Notice if your answer changed.'},
+    hi:{q:'अब रोज़मर्रा का उपकरण — पंखा, कूलर, प्यूरीफायर। सबसे ज़रूरी क्या है?',sub:'फिर से, अपने शीर्ष 3 क्रम में। देखें क्या आपका उत्तर बदला।'},
+    ta:{q:'இப்போது அன்றாட சாதனம் — மின்விசிறி, கூலர், சுத்திகரிப்பான். எது முக்கியம்?',sub:'மீண்டும், உங்கள் முதல் 3 வரிசையில். உங்கள் பதில் மாறியதா என்று கவனியுங்கள்.'},
+    te:{q:'ఇప్పుడు రోజువారీ ఉపకరణం — ఫ్యాన్, కూలర్, ప్యూరిఫయర్. ఏది ముఖ్యం?',sub:'మళ్లీ, మీ టాప్ 3 క్రమంలో. మీ సమాధానం మారిందా గమనించండి.'},
+    kn:{q:'ಈಗ ದೈನಂದಿನ ಉಪಕರಣ — ಫ್ಯಾನ್, ಕೂಲರ್, ಪ್ಯೂರಿಫೈಯರ್. ಯಾವುದು ಮುಖ್ಯ?',sub:'ಮತ್ತೆ, ನಿಮ್ಮ ಟಾಪ್ 3 ಕ್ರಮದಲ್ಲಿ. ನಿಮ್ಮ ಉತ್ತರ ಬದಲಾಯಿತೇ ಗಮನಿಸಿ.'},
+    ml:{q:'ഇപ്പോൾ ദൈനംദിന ഉപകരണം — ഫാൻ, കൂളർ, പ്യൂരിഫയർ. എന്താണ് പ്രധാനം?',sub:'വീണ്ടും, നിങ്ങളുടെ ടോപ് 3 ക്രമത്തിൽ. നിങ്ങളുടെ ഉത്തരം മാറിയോ ശ്രദ്ധിക്കൂ.'},
+    mr:{q:'आता रोजचे उपकरण — पंखा, कूलर, प्युरिफायर. काय महत्त्वाचे?',sub:'पुन्हा, तुमचे टॉप 3 क्रमाने. तुमचे उत्तर बदलले का पहा.'},
+    bn:{q:'এখন দৈনন্দিন যন্ত্র — ফ্যান, কুলার, পিউরিফায়ার। কী সবচেয়ে গুরুত্বপূর্ণ?',sub:'আবার, আপনার শীর্ষ ৩টি ক্রমানুসারে। আপনার উত্তর বদলেছে কিনা লক্ষ্য করুন।'},
+  },
+  q9:{ opts:{own:'✅',aware:'👀',no:'❔'},
+    labels:{
+      own:{en:'Yes — I own V-Guard products',hi:'हाँ — मेरे पास V-Guard उत्पाद हैं',ta:'ஆம் — என்னிடம் V-Guard பொருட்கள் உள்ளன',te:'అవును — నా వద్ద V-Guard ఉత్పత్తులు ఉన్నాయి',kn:'ಹೌದು — ನನ್ನ ಬಳಿ V-Guard ಉತ್ಪನ್ನಗಳಿವೆ',ml:'അതെ — എനിക്ക് V-Guard ഉൽപ്പന്നങ്ങൾ ഉണ്ട്',mr:'होय — माझ्याकडे V-Guard उत्पादने आहेत',bn:'হ্যাঁ — আমার V-Guard পণ্য আছে'},
+      aware:{en:"Yes — I'm aware of it",hi:'हाँ — मुझे इसकी जानकारी है',ta:'ஆம் — எனக்கு தெரியும்',te:'అవును — నాకు తెలుసు',kn:'ಹೌದು — ನನಗೆ ಗೊತ್ತು',ml:'അതെ — എനിക്കറിയാം',mr:'होय — मला माहीत आहे',bn:'হ্যাঁ — আমি জানি'},
+      no:{en:'No, never heard of it',hi:'नहीं, कभी नहीं सुना',ta:'இல்லை, கேள்விப்பட்டதில்லை',te:'లేదు, ఎప్పుడూ వినలేదు',kn:'ಇಲ್ಲ, ಕೇಳಿಲ್ಲ',ml:'ഇല്ല, കേട്ടിട്ടില്ല',mr:'नाही, कधी ऐकले नाही',bn:'না, কখনও শুনিনি'},
+    },
+    en:{q:'Do you know the brand V-Guard?'},
+    hi:{q:'क्या आप V-Guard ब्रांड जानते हैं?'},
+    ta:{q:'V-Guard பிராண்ட் உங்களுக்குத் தெரியுமா?'},
+    te:{q:'మీకు V-Guard బ్రాండ్ తెలుసా?'},
+    kn:{q:'ನಿಮಗೆ V-Guard ಬ್ರಾಂಡ್ ಗೊತ್ತೇ?'},
+    ml:{q:'നിങ്ങൾക്ക് V-Guard ബ്രാൻഡ് അറിയാമോ?'},
+    mr:{q:'तुम्हाला V-Guard ब्रँड माहीत आहे का?'},
+    bn:{q:'আপনি কি V-Guard ব্র্যান্ড চেনেন?'},
+  },
+  q10:{ optional:true,
+    en:{q:'In a few words — what does V-Guard mean to you?',sub:'Optional. First thing that comes to mind. Skip if nothing does.'},
+    hi:{q:'कुछ शब्दों में — V-Guard आपके लिए क्या मायने रखता है?',sub:'वैकल्पिक। जो पहले मन में आए। कुछ न हो तो छोड़ें।'},
+    ta:{q:'சில வார்த்தைகளில் — V-Guard உங்களுக்கு எதைக் குறிக்கிறது?',sub:'விருப்பம். முதலில் நினைவுக்கு வருவது. இல்லையெனில் தவிர்க்கவும்.'},
+    te:{q:'కొన్ని మాటల్లో — V-Guard మీకు ఏమిటి?',sub:'ఐచ్ఛికం. మొదట గుర్తుకు వచ్చేది. లేకపోతే దాటవేయండి.'},
+    kn:{q:'ಕೆಲವು ಪದಗಳಲ್ಲಿ — V-Guard ನಿಮಗೆ ಏನು?',sub:'ಐಚ್ಛಿಕ. ಮೊದಲು ನೆನಪಿಗೆ ಬರುವುದು. ಇಲ್ಲದಿದ್ದರೆ ಬಿಟ್ಟುಬಿಡಿ.'},
+    ml:{q:'ചുരുക്കം വാക്കുകളിൽ — V-Guard നിങ്ങൾക്ക് എന്താണ്?',sub:'ഐച്ഛികം. ആദ്യം മനസ്സിൽ വരുന്നത്. ഇല്ലെങ്കിൽ ഒഴിവാക്കുക.'},
+    mr:{q:'काही शब्दांत — V-Guard तुमच्यासाठी काय आहे?',sub:'पर्यायी. प्रथम मनात येणारे. काही नसेल तर वगळा.'},
+    bn:{q:'কয়েকটি শব্দে — V-Guard আপনার কাছে কী?',sub:'ঐচ্ছিক। প্রথমে যা মনে আসে। কিছু না হলে এড়িয়ে যান।'},
+  },
+  q11:{ opts:{own:'⚡',plan:'📅',maybe:'🤔',no:'🚫'},
+    labels:{
+      own:{en:'I already own one',hi:'मेरे पास पहले से है',ta:'என்னிடம் ஏற்கனவே உள்ளது',te:'నా వద్ద ఇప్పటికే ఉంది',kn:'ನನ್ನ ಬಳಿ ಈಗಾಗಲೇ ಇದೆ',ml:'എനിക്ക് ഇതിനകം ഉണ്ട്',mr:'माझ्याकडे आधीच आहे',bn:'আমার ইতিমধ্যে আছে'},
+      plan:{en:'Planning to buy within 3 years',hi:'3 साल में खरीदने की योजना',ta:'3 ஆண்டுகளில் வாங்க திட்டம்',te:'3 సంవత్సరాలలో కొనాలని ప్లాన్',kn:'3 ವರ್ಷದೊಳಗೆ ಖರೀದಿಸಲು ಯೋಜನೆ',ml:'3 വർഷത്തിനുള്ളിൽ വാങ്ങാൻ പദ്ധതി',mr:'3 वर्षांत खरेदीची योजना',bn:'৩ বছরের মধ্যে কেনার পরিকল্পনা'},
+      maybe:{en:'Maybe',hi:'शायद',ta:'ஒருவேளை',te:'బహుశా',kn:'ಬಹುಶಃ',ml:'ഒരുപക്ഷേ',mr:'कदाचित',bn:'হয়তো'},
+      no:{en:'No',hi:'नहीं',ta:'இல்லை',te:'లేదు',kn:'ಇಲ್ಲ',ml:'ഇല്ല',mr:'नाही',bn:'না'},
+    },
+    en:{q:'An electric vehicle in your near future?'},
+    hi:{q:'क्या नज़दीकी भविष्य में इलेक्ट्रिक वाहन?'},
+    ta:{q:'அருகிலுள்ள எதிர்காலத்தில் மின்சார வாகனமா?'},
+    te:{q:'సమీప భవిష్యత్తులో ఎలక్ట్రిక్ వాహనం?'},
+    kn:{q:'ಹತ್ತಿರದ ಭವಿಷ್ಯದಲ್ಲಿ ವಿದ್ಯುತ್ ವಾಹನ?'},
+    ml:{q:'സമീപ ഭാവിയിൽ ഒരു ഇലക്ട്രിക് വാഹനം?'},
+    mr:{q:'नजीकच्या भविष्यात इलेक्ट्रिक वाहन?'},
+    bn:{q:'নিকট ভবিষ্যতে একটি বৈদ্যুতিক গাড়ি?'},
+  },
+  q12:{ opts:{electrician:'👷',oem:'🏭',specialist:'🔌',cheap:'💸',dunno:'🤷'},
+    labels:{
+      electrician:{en:'A qualified electrician / electrical brand I trust',hi:'एक योग्य इलेक्ट्रिशियन / भरोसेमंद इलेक्ट्रिकल ब्रांड',ta:'தகுதியான மின்சாரி / நம்பகமான மின் பிராண்ட்',te:'అర్హత గల ఎలక్ట్రీషియన్ / నమ్మకమైన ఎలక్ట్రికల్ బ్రాండ్',kn:'ಅರ್ಹ ಎಲೆಕ್ಟ್ರೀಷಿಯನ್ / ವಿಶ್ವಾಸಾರ್ಹ ಎಲೆಕ್ಟ್ರಿಕಲ್ ಬ್ರಾಂಡ್',ml:'യോഗ്യതയുള്ള ഇലക്ട്രീഷ്യൻ / വിശ്വസ്ത ഇലക്ട്രിക്കൽ ബ്രാൻഡ്',mr:'पात्र इलेक्ट्रिशियन / विश्वासार्ह इलेक्ट्रिकल ब्रँड',bn:'যোগ্য ইলেকট্রিশিয়ান / বিশ্বস্ত বৈদ্যুতিক ব্র্যান্ড'},
+      oem:{en:'The vehicle manufacturer',hi:'वाहन निर्माता',ta:'வாகன உற்பத்தியாளர்',te:'వాహన తయారీదారు',kn:'ವಾಹನ ತಯಾರಕ',ml:'വാഹന നിർമ്മാതാവ്',mr:'वाहन निर्माता',bn:'গাড়ি প্রস্তুতকারক'},
+      specialist:{en:'A specialist EV company',hi:'एक विशेषज्ञ EV कंपनी',ta:'ஒரு சிறப்பு EV நிறுவனம்',te:'ఒక ప్రత్యేక EV కంపెనీ',kn:'ಒಂದು ವಿಶೇಷ EV ಕಂಪನಿ',ml:'ഒരു സ്പെഷ്യലിസ്റ്റ് EV കമ്പനി',mr:'एक तज्ज्ञ EV कंपनी',bn:'একটি বিশেষজ্ঞ EV কোম্পানি'},
+      cheap:{en:"Whoever's cheapest",hi:'जो सबसे सस्ता हो',ta:'யார் மலிவானவரோ',te:'ఎవరు చౌకైతే',kn:'ಯಾರು ಅಗ್ಗವೋ',ml:'ആരാണ് വിലകുറഞ്ഞത്',mr:'जो सर्वात स्वस्त',bn:'যে সবচেয়ে সস্তা'},
+      dunno:{en:'No idea',hi:'पता नहीं',ta:'தெரியாது',te:'తెలియదు',kn:'ಗೊತ್ತಿಲ್ಲ',ml:'അറിയില്ല',mr:'माहीत नाही',bn:'জানি না'},
+    },
+    en:{q:'A home EV charger — who would you trust to fit and service it?',sub:"This is the question behind V-Guard's next move. Be honest."},
+    hi:{q:'घर का EV चार्जर — इसे लगाने और सेवा के लिए किस पर भरोसा करेंगे?',sub:'यही V-Guard के अगले कदम का सवाल है। ईमानदार रहें।'},
+    ta:{q:'வீட்டு EV சார்ஜர் — பொருத்தவும் சேவை செய்யவும் யாரை நம்புவீர்கள்?',sub:'இதுவே V-Guard-இன் அடுத்த நகர்வின் கேள்வி. நேர்மையாக இருங்கள்.'},
+    te:{q:'ఇంటి EV ఛార్జర్ — దీన్ని అమర్చడానికి, సేవకు ఎవరిని నమ్ముతారు?',sub:'ఇదే V-Guard తదుపరి అడుగు వెనుక ప్రశ్న. నిజాయితీగా ఉండండి.'},
+    kn:{q:'ಮನೆ EV ಚಾರ್ಜರ್ — ಅಳವಡಿಸಲು ಮತ್ತು ಸೇವೆಗೆ ಯಾರನ್ನು ನಂಬುತ್ತೀರಿ?',sub:'ಇದೇ V-Guard ಮುಂದಿನ ನಡೆಯ ಪ್ರಶ್ನೆ. ಪ್ರಾಮಾಣಿಕವಾಗಿರಿ.'},
+    ml:{q:'വീട്ടിലെ EV ചാർജർ — ഘടിപ്പിക്കാനും സേവനത്തിനും ആരെ വിശ്വസിക്കും?',sub:'ഇതാണ് V-Guard-ന്റെ അടുത്ത നീക്കത്തിന് പിന്നിലെ ചോദ്യം. സത്യസന്ധരായിരിക്കുക.'},
+    mr:{q:'घरचा EV चार्जर — बसवण्यासाठी आणि सेवेसाठी कोणावर विश्वास ठेवाल?',sub:'हाच V-Guard च्या पुढील पावलामागचा प्रश्न आहे. प्रामाणिक रहा.'},
+    bn:{q:'বাড়ির EV চার্জার — লাগানো ও সার্ভিসিংয়ে কাকে বিশ্বাস করবেন?',sub:'এটাই V-Guard-এর পরবর্তী পদক্ষেপের প্রশ্ন। সৎ থাকুন।'},
+  },
+  q13:{ opts:{'u25':null,'25-34':null,'35-44':null,'45-54':null,'55+':null},
+    labels:{
+      'u25':{en:'Under 25',hi:'25 से कम',ta:'25-க்கு கீழ்',te:'25 లోపు',kn:'25ಕ್ಕಿಂತ ಕಡಿಮೆ',ml:'25-ന് താഴെ',mr:'25 पेक्षा कमी',bn:'২৫-এর নিচে'},
+      '25-34':{en:'25–34',hi:'25–34',ta:'25–34',te:'25–34',kn:'25–34',ml:'25–34',mr:'25–34',bn:'২৫–৩৪'},
+      '35-44':{en:'35–44',hi:'35–44',ta:'35–44',te:'35–44',kn:'35–44',ml:'35–44',mr:'35–44',bn:'৩৫–৪৪'},
+      '45-54':{en:'45–54',hi:'45–54',ta:'45–54',te:'45–54',kn:'45–54',ml:'45–54',mr:'45–54',bn:'৪৫–৫৪'},
+      '55+':{en:'55+',hi:'55+',ta:'55+',te:'55+',kn:'55+',ml:'55+',mr:'55+',bn:'৫৫+'},
+    },
+    en:{q:'Your age?'},hi:{q:'आपकी उम्र?'},ta:{q:'உங்கள் வயது?'},te:{q:'మీ వయస్సు?'},kn:{q:'ನಿಮ್ಮ ವಯಸ್ಸು?'},ml:{q:'നിങ്ങളുടെ വയസ്സ്?'},mr:{q:'तुमचे वय?'},bn:{q:'আপনার বয়স?'},
+  },
+  q14:{ opts:{'lt50':null,'50-1':null,'1-2':null,'gt2':null,'na':null},
+    labels:{
+      'lt50':{en:'Under ₹50,000',hi:'₹50,000 से कम',ta:'₹50,000-க்கு கீழ்',te:'₹50,000 లోపు',kn:'₹50,000ಕ್ಕಿಂತ ಕಡಿಮೆ',ml:'₹50,000-ന് താഴെ',mr:'₹50,000 पेक्षा कमी',bn:'₹৫০,০০০-এর নিচে'},
+      '50-1':{en:'₹50,000 – ₹1 lakh',hi:'₹50,000 – ₹1 लाख',ta:'₹50,000 – ₹1 லட்சம்',te:'₹50,000 – ₹1 లక్ష',kn:'₹50,000 – ₹1 ಲಕ್ಷ',ml:'₹50,000 – ₹1 ലക്ഷം',mr:'₹50,000 – ₹1 लाख',bn:'₹৫০,০০০ – ₹১ লাখ'},
+      '1-2':{en:'₹1 – 2 lakh',hi:'₹1 – 2 लाख',ta:'₹1 – 2 லட்சம்',te:'₹1 – 2 లక్షలు',kn:'₹1 – 2 ಲಕ್ಷ',ml:'₹1 – 2 ലക്ഷം',mr:'₹1 – 2 लाख',bn:'₹১ – ২ লাখ'},
+      'gt2':{en:'Over ₹2 lakh',hi:'₹2 लाख से अधिक',ta:'₹2 லட்சத்திற்கு மேல்',te:'₹2 లక్షలకు పైగా',kn:'₹2 ಲಕ್ಷಕ್ಕಿಂತ ಹೆಚ್ಚು',ml:'₹2 ലക്ഷത്തിന് മുകളിൽ',mr:'₹2 लाखांपेक्षा जास्त',bn:'₹২ লাখের বেশি'},
+      'na':{en:'Prefer not to say',hi:'नहीं बताना चाहते',ta:'சொல்ல விரும்பவில்லை',te:'చెప్పడం ఇష్టం లేదు',kn:'ಹೇಳಲು ಇಷ್ಟವಿಲ್ಲ',ml:'പറയാൻ ആഗ്രഹിക്കുന്നില്ല',mr:'सांगू इच्छित नाही',bn:'বলতে চাই না'},
+    },
+    en:{q:'Monthly household income?',sub:'Kept anonymous. Helps us read the price-sensitivity signal.'},
+    hi:{q:'मासिक घरेलू आय?',sub:'गुप्त रखा जाता है। कीमत-संवेदनशीलता समझने में मदद करता है।'},
+    ta:{q:'மாதாந்திர குடும்ப வருமானம்?',sub:'அநாமதேயமாக வைக்கப்படும். விலை-உணர்திறனைப் புரிய உதவும்.'},
+    te:{q:'నెలవారీ కుటుంబ ఆదాయం?',sub:'అనామకంగా ఉంచబడుతుంది. ధర-సున్నితత్వాన్ని అర్థం చేసుకోవడానికి సహాయపడుతుంది.'},
+    kn:{q:'ಮಾಸಿಕ ಕುಟುಂಬ ಆದಾಯ?',sub:'ಅನಾಮಧೇಯವಾಗಿ ಇರಿಸಲಾಗುತ್ತದೆ. ಬೆಲೆ-ಸೂಕ್ಷ್ಮತೆ ಅರ್ಥಮಾಡಿಕೊಳ್ಳಲು ಸಹಾಯ.'},
+    ml:{q:'പ്രതിമാസ കുടുംബ വരുമാനം?',sub:'അജ്ഞാതമായി സൂക്ഷിക്കുന്നു. വില-സംവേദനക്ഷമത മനസ്സിലാക്കാൻ സഹായിക്കുന്നു.'},
+    mr:{q:'मासिक कौटुंबिक उत्पन्न?',sub:'गुप्त ठेवले जाते. किंमत-संवेदनशीलता समजण्यास मदत होते.'},
+    bn:{q:'মাসিক পারিবারিক আয়?',sub:'গোপন রাখা হয়। দাম-সংবেদনশীলতা বুঝতে সাহায্য করে।'},
+  },
+  q15:{ opts:{house:'🏠',flat:'🏢',rent:'🔑'},
+    labels:{
+      house:{en:'An owned house',hi:'अपना घर',ta:'சொந்த வீடு',te:'సొంత ఇల్లు',kn:'ಸ್ವಂತ ಮನೆ',ml:'സ്വന്തം വീട്',mr:'स्वतःचे घर',bn:'নিজের বাড়ি'},
+      flat:{en:'An owned flat',hi:'अपना फ्लैट',ta:'சொந்த பிளாட்',te:'సొంత ఫ్లాట్',kn:'ಸ್ವಂತ ಫ್ಲಾಟ್',ml:'സ്വന്തം ഫ്ലാറ്റ്',mr:'स्वतःचा फ्लॅट',bn:'নিজের ফ্ল্যাট'},
+      rent:{en:'Rented',hi:'किराए का',ta:'வாடகை',te:'అద్దె',kn:'ಬಾಡಿಗೆ',ml:'വാടക',mr:'भाड्याचे',bn:'ভাড়া'},
+    },
+    en:{q:'Your home is…'},hi:{q:'आपका घर है…'},ta:{q:'உங்கள் வீடு…'},te:{q:'మీ ఇల్లు…'},kn:{q:'ನಿಮ್ಮ ಮನೆ…'},ml:{q:'നിങ്ങളുടെ വീട്…'},mr:{q:'तुमचे घर आहे…'},bn:{q:'আপনার বাড়ি…'},
+  },
+};
+
+
+const PRODUCTS = Object.keys(PROD).map(id=>({id, em:PROD[id].em, grp:['fan','cooler','purifier','geyser','lighting'].includes(id)?'dur':'elec'}));
+const INFLUENCERS = ['self','electrician','retailer','online','builder'];
+
+/* survey order + per-question meta */
+const ORDER = [
+  {id:'q1',type:'multi',sec:'secContext',min:1},
+  {id:'q2',type:'multi',sec:'secContext',min:1},
+  {id:'q3',type:'single',sec:'secContext'},
+  {id:'q4',type:'matrix',sec:'secBig'},
+  {id:'q5',type:'single',sec:'secTrust'},
+  {id:'q6',type:'multi',sec:'secTrust',min:1,max:2},
+  {id:'q7',type:'rank',sec:'secValue',pick:3},
+  {id:'q8',type:'rank',sec:'secValue',pick:3},
+  {id:'q9',type:'single',sec:'secBrand'},
+  {id:'q10',type:'text',sec:'secBrand',optional:true},
+  {id:'q11',type:'single',sec:'secRoad'},
+  {id:'q12',type:'single',sec:'secRoad'},
+  {id:'q13',type:'single',sec:'secYou'},
+  {id:'q14',type:'single',sec:'secYou'},
+  {id:'q15',type:'single',sec:'secYou'},
+];
+const TOTAL = ORDER.length;
+
+let lang = 'en';
+let idx = -1; // -1 = intro, TOTAL = outro
+const answers = {};
+const startedAt = Date.now();
+
+const $ = s=>document.querySelector(s);
+const stage=$('#stage'),fill=$('#fill'),nextBtn=$('#next'),backBtn=$('#back'),errEl=$('#err');
+const CHECK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M5 13l4 4L19 7"/></svg>';
+const t = k => (I18N[lang]&&I18N[lang][k])||I18N.en[k];
+
+function setLangUI(){
+  document.documentElement.lang=lang;
+  document.body.dir=I18N[lang].dir||'ltr';
+  $('#langCur').textContent = lang.toUpperCase();
+  backBtn.textContent = t('back');
+}
+
+/* option label helpers pull from TX/PROD/INF by value-id */
+function optLabel(qid,vid){
+  const q=TX[qid];
+  if(q.labels&&q.labels[vid]) return q.labels[vid][lang]||q.labels[vid].en;
+  return vid;
+}
+function prodLabel(id){return PROD[id][lang]||PROD[id].en;}
+function infLabel(id){return INF[id][lang]||INF[id].en;}
+function qText(qid,f){const q=TX[qid];return (q[lang]&&q[lang][f])||(q.en&&q.en[f])||'';}
+
+function activeProducts(){const p=answers.q1||[];return PRODUCTS.filter(x=>p.includes(x.id));}
+
+function render(){
+  errEl.textContent='';
+  const pct = idx<0?0:idx>=TOTAL?100:Math.round((idx/TOTAL)*100);
+  fill.style.width=pct+'%';
+  backBtn.disabled = idx<=-1;
+  nextBtn.style.visibility = idx>=TOTAL?'hidden':'visible';
+  if(idx<0) return renderIntro();
+  if(idx>=TOTAL) return renderOutro();
+  nextBtn.textContent = idx===TOTAL-1?t('finish'):t('continue');
+
+  const item=ORDER[idx], qid=item.id;
+  let h=`<div class="card"><div class="eyebrow"><span class="dot"></span>${t(item.sec)}</div>`;
+  h+=`<h1 class="q">${qText(qid,'q')}</h1>`;
+  const sub=qText(qid,'sub'); if(sub)h+=`<p class="sub">${sub}</p>`;
+  const hint=qText(qid,'hint'); if(hint)h+=`<div class="hint">↳ ${hint}</div>`;
+
+  if(item.type==='single'||item.type==='multi'){
+    const opts = TX[qid].opts; // object valueId->emoji  OR  (q1) array of product ids
+    let list;
+    if(qid==='q1') list = TX.q1.opts.map(pid=>({id:pid,label:prodLabel(pid),lead:PROD[pid].em}));
+    else list = Object.keys(opts).map(vid=>({id:vid,label:optLabel(qid,vid),lead:opts[vid]}));
+    const two = list.length>=5 && list.every(o=>(o.label||'').length<30);
+    h+=`<div class="opts${two?' two':''}">`;
+    list.forEach(o=>{
+      const sel=item.type==='single'?answers[qid]===o.id:(answers[qid]||[]).includes(o.id);
+      h+=`<button class="opt${sel?' sel':''}" data-id="${o.id}"><span class="tick">${CHECK}</span>${o.lead?`<span class="lead">${o.lead}</span>`:''}<span>${o.label}</span></button>`;
+    });
+    h+=`</div>`;
+  }
+  else if(item.type==='rank'){
+    const cur=answers[qid]||[], opts=TX[qid].opts;
+    h+=`<div class="opts">`;
+    Object.keys(opts).forEach(vid=>{
+      const r=cur.indexOf(vid),sel=r>-1;
+      h+=`<button class="opt${sel?' sel':''}" data-id="${vid}"><span class="tick">${CHECK}</span><span class="rank">${sel?r+1:''}</span><span class="lead">${opts[vid]}</span><span>${optLabel(qid,vid)}</span></button>`;
+    });
+    h+=`</div>`;
+  }
+  else if(item.type==='matrix'){
+    const rows=activeProducts();
+    if(!rows.length) h+=`<p class="sub">—</p>`;
+    h+=`<div class="matrix">`;
+    rows.forEach(p=>{
+      const val=(answers.q4||{})[p.id];
+      h+=`<div class="mrow${val?' done':''}"><div class="mrow-h"><span class="em">${PROD[p.id].em}</span>${prodLabel(p.id)}</div><div class="chips">`;
+      INFLUENCERS.forEach(i=>h+=`<button class="chip${val===i?' on':''}" data-row="${p.id}" data-inf="${i}">${infLabel(i)}</button>`);
+      h+=`<button class="chip${val==='forget'?' on':''}" data-row="${p.id}" data-inf="forget">${infLabel('forget')}</button>`;
+      h+=`</div></div>`;
+    });
+    h+=`</div>`;
+  }
+  else if(item.type==='text'){
+    h+=`<input class="field" id="txt" placeholder="${t('ph10')}" value="${answers[qid]||''}" maxlength="120">`;
+    h+=`<p class="sub" style="margin-top:12px;margin-bottom:0">${t('optionalSkip')}</p>`;
+  }
+  h+=`</div>`;
+  stage.innerHTML=h;
+  wire(item);
+}
+
+function wire(item){
+  const qid=item.id;
+  if(item.type==='single'){
+    stage.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{answers[qid]=b.dataset.id;render();setTimeout(()=>{if(canAdvance(item))go(1);},170);});
+  }
+  if(item.type==='multi'){
+    stage.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
+      const a=answers[qid]||[];const i=a.indexOf(b.dataset.id);
+      if(i>-1)a.splice(i,1);else{if(item.max&&a.length>=item.max)a.shift();a.push(b.dataset.id);}
+      answers[qid]=a;render();
+    });
+  }
+  if(item.type==='rank'){
+    stage.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
+      const a=answers[qid]||[];const i=a.indexOf(b.dataset.id);
+      if(i>-1)a.splice(i,1);else if(a.length<item.pick)a.push(b.dataset.id);
+      answers[qid]=a;render();
+    });
+  }
+  if(item.type==='matrix'){
+    stage.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{answers.q4=answers.q4||{};answers.q4[c.dataset.row]=c.dataset.inf;render();});
+  }
+  if(item.type==='text'){const el=$('#txt');el.oninput=()=>answers[qid]=el.value;}
+}
+
+function canAdvance(item){
+  const qid=item.id;
+  if(item.type==='text')return true;
+  if(item.type==='single')return !!answers[qid];
+  if(item.type==='multi')return (answers[qid]||[]).length>=(item.min||1);
+  if(item.type==='rank')return (answers[qid]||[]).length===item.pick;
+  if(item.type==='matrix'){const r=activeProducts();return !r.length||r.every(p=>(answers.q4||{})[p.id]);}
+  return true;
+}
+function go(d){idx=Math.max(-1,Math.min(TOTAL,idx+d));window.scrollTo({top:0,behavior:'smooth'});render();}
+
+nextBtn.onclick=()=>{
+  if(idx<0){go(1);return;}
+  const item=ORDER[idx];
+  if(!canAdvance(item)){
+    const m={multi:`${t('errMulti')} ${item.min||1}.`,single:t('errOne'),rank:`${t('errRank')} ${item.pick}.`,matrix:t('errMatrix')};
+    errEl.textContent=m[item.type]||t('errOne');return;
+  }
+  if(idx===TOTAL-1){go(1);submit();return;}
+  go(1);
+};
+backBtn.onclick=()=>go(-1);
+document.addEventListener('keydown',e=>{
+  if(idx<0||idx>=TOTAL)return;
+  const item=ORDER[idx];
+  if(e.key==='Enter'){nextBtn.click();return;}
+  if(/^[1-9]$/.test(e.key)&&(item.type==='single'||item.type==='multi'||item.type==='rank')){
+    const b=stage.querySelectorAll('.opt')[+e.key-1];if(b)b.click();
+  }
+});
+
+/* ---------- intro ---------- */
+function renderIntro(){
+  setLangUI();nextBtn.textContent=t('begin');
+  stage.innerHTML=`<div class="card center">
+    <div class="hero-bolt">⚡</div>
+    <div class="big">${t('heroA')} <em>${t('heroEm')}</em><br>${t('heroB')}</div>
+    <p>${t('heroP1')}</p>
+    <p>${t('heroP2a')} <b>${t('mMin')} ${t('m2')}</b> ${t('heroP2b')}</p>
+    <div class="meta"><div><b>${TOTAL}</b>${t('m1')}</div><div><b>${t('mMin')}</b>${t('m2')}</div><div><b>100%</b>${t('m3')}</div></div>
+    <div class="langlabel">${t('langPick')}</div>
+    <div class="langgrid" id="introLang"></div>
+  </div>`;
+  const g=$('#introLang');
+  Object.keys(I18N).forEach(code=>{
+    const b=document.createElement('button');
+    b.className='langcard'+(code===lang?' sel':'');
+    b.textContent=I18N[code].name;
+    b.onclick=()=>{lang=code;render();};
+    g.appendChild(b);
+  });
+}
+
+/* ---------- outro + submit ---------- */
+function renderOutro(){
+  fill.style.width='100%';setLangUI();
+  stage.innerHTML=`<div class="card center">
+    <div class="spin" id="spin"></div>
+    <div class="big" style="font-size:clamp(24px,5vw,34px)">${t('outroA')} <em>${t('outroB')}</em></div>
+    <p id="outMsg">${t('saving')}</p>
+    <div id="outAction"></div>
+  </div>`;
+}
+function buildPayload(){
+  const row={
+    timestamp:new Date().toISOString(),
+    lang, seconds:Math.round((Date.now()-startedAt)/1000),
+    q1:(answers.q1||[]).join('|'),
+    q2:(answers.q2||[]).join('|'),
+    q3:answers.q3||'',
+    q5:answers.q5||'',
+    q6:(answers.q6||[]).join('|'),
+    q7:(answers.q7||[]).join('>'),
+    q8:(answers.q8||[]).join('>'),
+    q9:answers.q9||'',
+    q10:answers.q10||'',
+    q11:answers.q11||'',
+    q12:answers.q12||'',
+    q13:answers.q13||'',
+    q14:answers.q14||'',
+    q15:answers.q15||'',
+  };
+  PRODUCTS.forEach(p=>row['q4_'+p.id]=(answers.q4||{})[p.id]||'');
+  return row;
+}
+function submit(){
+  const payload=buildPayload();
+  const done=(ok,msg)=>{
+    const sp=$('#spin');if(sp)sp.style.display='none';
+    const m=$('#outMsg'),a=$('#outAction');if(!m)return;
+    if(ok){m.innerHTML=`<span class="pill">${t('outroPill')}</span><br>${t('outroP')}`;}
+    else{m.textContent=t('saveErr');
+      a.innerHTML=`<button class="btn btn-primary" id="retry">${t('retry')}</button>`;
+      $('#retry').onclick=()=>{a.innerHTML='';if($('#spin'))$('#spin').style.display='';m.textContent=t('saving');submit();};
+    }
+  };
+  if(!ENDPOINT_URL||ENDPOINT_URL.indexOf('PASTE_YOUR')===0){
+    // no backend wired yet — offer local CSV so no data is lost during testing
+    const sp=$('#spin');if(sp)sp.style.display='none';
+    const m=$('#outMsg'),a=$('#outAction');
+    m.innerHTML=`<span class="pill">${t('outroPill')}</span><br>${t('outroP')}`;
+    const keys=Object.keys(payload);
+    const csv=keys.join(',')+'\n'+keys.map(k=>`"${String(payload[k]).replace(/"/g,'""')}"`).join(',');
+    a.innerHTML=`<button class="btn btn-primary" id="dl">⬇ Save response (.csv)</button>`;
+    $('#dl').onclick=()=>{const b=new Blob([csv],{type:'text/csv'});const u=document.createElement('a');u.href=URL.createObjectURL(b);u.download='vguard_response_'+Date.now()+'.csv';u.click();$('#dl').textContent=t('saved');};
+    return;
+  }
+  // POST to Apps Script. Use no-cors form-encoded to avoid preflight issues.
+  const body=new URLSearchParams();
+  Object.keys(payload).forEach(k=>body.append(k,payload[k]));
+  fetch(ENDPOINT_URL,{method:'POST',body})
+    .then(()=>done(true))
+    .catch(()=>done(false));
+  // no-cors fetches resolve opaque; give it a beat then assume ok
+  setTimeout(()=>{if($('#spin')&&$('#spin').style.display!=='none')done(true);},2500);
+}
+
+/* ---------- language sheet (mid-survey switch) ---------- */
+$('#langBtn').onclick=()=>{
+  const sh=$('#sheet');sh.classList.add('open');
+  $('#sheetTitle').textContent=t('langPick');
+  const g=$('#langGrid');g.innerHTML='';
+  Object.keys(I18N).forEach(code=>{
+    const b=document.createElement('button');
+    b.className='langcard'+(code===lang?' sel':'');
+    b.textContent=I18N[code].name;
+    b.onclick=()=>{lang=code;sh.classList.remove('open');render();};
+    g.appendChild(b);
+  });
+};
+$('#sheet').onclick=e=>{if(e.target.id==='sheet')e.currentTarget.classList.remove('open');};
+
+setLangUI();render();
+</script>
+</body>
+</html>

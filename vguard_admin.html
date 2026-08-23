@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V-Guard Survey · Admin Analytics</title>
+<style>
+  :root{
+    --navy:#10233b;--navy-2:#1b3554;--copper:#c8703a;--amber:#f2b134;
+    --paper:#eef1f5;--card:#ffffff;--ink:#14202e;--muted:#64748b;
+    --green:#2f9e6f;--red:#d1584f;--line:#e2e8f0;
+    --elec:#2f6fed;--dur:#e08128;
+    --display:"Space Grotesk",system-ui,sans-serif;--body:"Inter",system-ui,sans-serif;
+  }
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--body);background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;padding-bottom:60px}
+  header{background:var(--navy);color:#fff;padding:20px 24px;position:sticky;top:0;z-index:10}
+  .head-in{max-width:1180px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  .htitle{font-family:var(--display);font-weight:700;font-size:19px;display:flex;align-items:center;gap:10px}
+  .htitle .b{width:26px;height:26px;background:var(--amber);color:var(--navy);border-radius:7px;display:grid;place-items:center;font-size:15px}
+  .controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .controls input,.controls select{font:inherit;font-size:13px;padding:8px 11px;border-radius:9px;border:1px solid var(--navy-2);background:var(--navy-2);color:#fff}
+  .controls input::placeholder{color:#94a3b8}
+  .btn{font-family:var(--display);font-weight:600;font-size:13px;background:var(--amber);color:var(--navy);border:none;border-radius:9px;padding:9px 16px;cursor:pointer}
+  .btn:hover{filter:brightness(1.05)}
+  .btn.ghost{background:transparent;color:#fff;border:1px solid var(--navy-2)}
+  main{max-width:1180px;margin:0 auto;padding:24px}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:24px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+  .kpi .n{font-family:var(--display);font-weight:700;font-size:30px;color:var(--navy);line-height:1}
+  .kpi .l{font-size:12.5px;color:var(--muted);margin-top:6px}
+  .kpi .s{font-size:11.5px;color:var(--copper);font-weight:600;margin-top:4px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:820px){.grid{grid-template-columns:1fr}}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px 22px;margin-bottom:18px}
+  .panel.full{grid-column:1/-1}
+  .ph{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:4px}
+  .ph h2{font-family:var(--display);font-weight:600;font-size:16px;color:var(--navy)}
+  .ph .tag{font-size:11px;font-weight:600;color:var(--copper);text-transform:uppercase;letter-spacing:.08em}
+  .psub{font-size:12.5px;color:var(--muted);margin-bottom:16px;line-height:1.45}
+  .finding{background:linear-gradient(0deg,rgba(242,177,52,.09),rgba(242,177,52,.09)),#fff;border-left:3px solid var(--amber);padding:11px 14px;border-radius:8px;font-size:13px;color:var(--navy);margin-bottom:16px;line-height:1.5}
+  .finding b{color:var(--copper)}
+  /* horizontal stacked influence bars */
+  .infbar{margin-bottom:13px}
+  .infbar .lab{display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px}
+  .infbar .lab .nm{font-weight:600;color:var(--navy);display:flex;gap:7px;align-items:center}
+  .infbar .lab .em{font-size:15px}
+  .infbar .lab .pct{color:var(--elec);font-weight:700;font-variant-numeric:tabular-nums}
+  .infbar.durrow .lab .pct{color:var(--dur)}
+  .stack{height:26px;border-radius:7px;overflow:hidden;display:flex;background:#f1f5f9;border:1px solid var(--line)}
+  .seg{height:100%;transition:width .6s cubic-bezier(.3,.8,.3,1)}
+  .legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:6px;font-size:11.5px;color:var(--muted)}
+  .legend span{display:flex;align-items:center;gap:5px}
+  .dot{width:10px;height:10px;border-radius:3px}
+  /* generic bar list */
+  .barlist .row{margin-bottom:11px}
+  .barlist .top{display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px}
+  .barlist .top .v{font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums}
+  .bartrack{height:20px;background:#f1f5f9;border-radius:6px;overflow:hidden}
+  .barfill{height:100%;border-radius:6px;transition:width .6s}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+  th{font-family:var(--display);font-weight:600;color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.05em}
+  td.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+  .quotes{display:flex;flex-direction:column;gap:8px;max-height:280px;overflow:auto}
+  .quote{background:var(--paper);border-radius:9px;padding:10px 13px;font-size:13px;color:var(--ink)}
+  .quote .meta{font-size:11px;color:var(--muted);margin-top:3px}
+  .empty{text-align:center;padding:60px 20px;color:var(--muted)}
+  .empty .spin{width:34px;height:34px;border:3px solid var(--line);border-top-color:var(--copper);border-radius:50%;animation:sp .8s linear infinite;margin:0 auto 16px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  @media(max-width:560px){.split{grid-template-columns:1fr}}
+  .note{font-size:11.5px;color:var(--muted);margin-top:10px;font-style:italic}
+  code{background:#f1f5f9;padding:2px 6px;border-radius:5px;font-size:12px}
+</style>
+</head>
+<body>
+<header>
+  <div class="head-in">
+    <div class="htitle"><span class="b">⚡</span> V-Guard Survey · Analytics</div>
+    <div class="controls">
+      <select id="regionF"><option value="">All regions</option>
+        <option value="south">South</option><option value="north">North</option>
+        <option value="west">West</option><option value="east">East</option>
+        <option value="central">Central/NE</option></select>
+      <select id="langF"><option value="">All languages</option></select>
+      <button class="btn ghost" id="refresh">↻ Refresh</button>
+      <button class="btn" id="export">⬇ Export CSV</button>
+    </div>
+  </div>
+</header>
+<main id="main">
+  <div class="empty"><div class="spin"></div>Loading responses…</div>
+</main>
+
+<script>
+/* ============================================================
+   Paste the SAME Apps Script Web App URL you used in the survey.
+   (The dashboard reads via GET; the survey writes via POST.)
+   If you set an ADMIN_KEY in the script, put it in ADMIN_KEY below.
+   ============================================================ */
+const FEED_URL = "https://script.google.com/macros/s/AKfycbw9wYqKwrQJziiZoAHgwyTxKHQ0yUAPdwQreKL2KhjRy_cOGhAvVUUBkISr4dOGhDsX/exec";
+const ADMIN_KEY = "";
+/* ============================================================ */
+
+const PRODUCTS=[
+  {id:'wiring',em:'🔌',label:'Wiring / cables',grp:'elec'},
+  {id:'switches',em:'🎚️',label:'Modular switches',grp:'elec'},
+  {id:'switchgear',em:'🧰',label:'MCB / switchgear',grp:'elec'},
+  {id:'stab',em:'📟',label:'Voltage stabiliser',grp:'elec'},
+  {id:'inverter',em:'🔋',label:'Inverter / UPS',grp:'elec'},
+  {id:'fan',em:'🌀',label:'Fans',grp:'dur'},
+  {id:'cooler',em:'❄️',label:'Air cooler',grp:'dur'},
+  {id:'purifier',em:'💧',label:'Water purifier',grp:'dur'},
+  {id:'geyser',em:'♨️',label:'Water heater',grp:'dur'},
+  {id:'lighting',em:'💡',label:'Lighting',grp:'dur'},
+];
+const INF=[
+  {id:'electrician',label:'Electrician',color:'#2f6fed'},
+  {id:'builder',label:'Builder/architect',color:'#5b8def'},
+  {id:'retailer',label:'Retailer',color:'#f2b134'},
+  {id:'self',label:'Self / family',color:'#e08128'},
+  {id:'online',label:'Online reviews',color:'#d1584f'},
+  {id:'forget',label:"Don't recall",color:'#cbd5e1'},
+];
+const LANGS={en:'English',hi:'Hindi',ta:'Tamil',te:'Telugu',kn:'Kannada',ml:'Malayalam',mr:'Marathi',bn:'Bengali'};
+const VAL={ // decode stored value-ids to readable labels for simple questions
+  q5:{completely:'Trust completely',mostly:'Mostly',somewhat:'Somewhat',notatall:'Not at all',none:'No electrician'},
+  q9:{own:'Owns V-Guard',aware:'Aware of it',no:'Never heard'},
+  q11:{own:'Owns EV',plan:'Planning ≤3yr',maybe:'Maybe',no:'No'},
+  q12:{electrician:'Electrician / trusted electrical brand',oem:'Vehicle maker',specialist:'Specialist EV co.',cheap:'Cheapest',dunno:'No idea'},
+  q7:{safety:'Safety',brand:'Brand',price:'Price',elec:'Electrician rec.',warranty:'Warranty',avail:'Availability'},
+  q8:{price:'Price',features:'Features/looks',brand:'Brand',reviews:'Online reviews',energy:'Energy eff.',service:'After-sales'},
+};
+
+let RAW=[]; // all rows
+const $=s=>document.querySelector(s);
+
+function load(){
+  $('#main').innerHTML='<div class="empty"><div class="spin"></div>Loading responses…</div>';
+  if(!FEED_URL||FEED_URL.indexOf('PASTE_YOUR')===0){
+    $('#main').innerHTML=`<div class="panel"><h2>Almost there — connect your data feed</h2>
+      <p class="psub">Open <code>vguard_admin.html</code> in a text editor and set <code>FEED_URL</code> to your Apps Script Web App URL (the same one used by the survey). See <code>SETUP_GUIDE.md</code>. Once set, this page fills with live charts.</p></div>`;
+    return;
+  }
+  const url=FEED_URL+(ADMIN_KEY?('?key='+encodeURIComponent(ADMIN_KEY)):'');
+  fetch(url).then(r=>r.json()).then(d=>{
+    if(!d.ok){throw new Error(d.error||'feed error');}
+    RAW=d.rows||[];
+    populateLangFilter();
+    renderAll();
+  }).catch(err=>{
+    $('#main').innerHTML=`<div class="panel"><h2>Couldn't load data</h2><p class="psub">${err.message}. Check the URL and that the script is deployed with access set to "Anyone".</p></div>`;
+  });
+}
+
+function populateLangFilter(){
+  const langs=[...new Set(RAW.map(r=>r.lang).filter(Boolean))];
+  const sel=$('#langF');sel.innerHTML='<option value="">All languages</option>';
+  langs.forEach(l=>{const o=document.createElement('option');o.value=l;o.textContent=LANGS[l]||l;sel.appendChild(o);});
+}
+function filtered(){
+  const reg=$('#regionF').value, lang=$('#langF').value;
+  return RAW.filter(r=>(!reg||r.q3===reg)&&(!lang||r.lang===lang));
+}
+
+function pct(n,d){return d?Math.round(n/d*100):0;}
+
+function renderAll(){
+  const D=filtered();
+  const n=D.length;
+  if(!n){$('#main').innerHTML='<div class="empty">No responses match this filter yet.</div>';return;}
+
+  // KPIs
+  const knowV = D.filter(r=>r.q9==='own'||r.q9==='aware').length;
+  const evTrustElec = D.filter(r=>r.q12==='electrician').length;
+  const medSec = median(D.map(r=>+r.seconds||0));
+  // headline: electrician-influence gap between elec vs durable categories (q4)
+  const elecShareByCat={};
+  PRODUCTS.forEach(p=>{
+    const col='q4_'+p.id;
+    const answered=D.filter(r=>r[col]);
+    const elec=answered.filter(r=>r[col]==='electrician'||r[col]==='builder').length;
+    elecShareByCat[p.id]={pct:pct(elec,answered.length),base:answered.length};
+  });
+  const elecAvg=avg(PRODUCTS.filter(p=>p.grp==='elec').map(p=>elecShareByCat[p.id].pct));
+  const durAvg=avg(PRODUCTS.filter(p=>p.grp==='dur').map(p=>elecShareByCat[p.id].pct));
+  const gap=Math.round(elecAvg-durAvg);
+
+  let html='';
+  html+=`<div class="kpis">
+    <div class="kpi"><div class="n">${n}</div><div class="l">Total responses</div></div>
+    <div class="kpi"><div class="n">${gap}pp</div><div class="l">Electrician-influence gap</div><div class="s">electricals vs durables</div></div>
+    <div class="kpi"><div class="n">${pct(knowV,n)}%</div><div class="l">Know the V-Guard brand</div></div>
+    <div class="kpi"><div class="n">${pct(evTrustElec,n)}%</div><div class="l">Would trust electrician for EV charger</div></div>
+    <div class="kpi"><div class="n">${medSec?medSec+'s':'—'}</div><div class="l">Median completion time</div></div>
+  </div>`;
+
+  // ===== CORE PANEL: influence matrix =====
+  html+=`<div class="panel full"><div class="ph"><h2>Who chose the brand? — by category</h2><span class="tag">Q4 · the core finding</span></div>
+    <p class="psub">Share of respondents who said an <b>electrician or builder</b> chose the brand, versus themselves / online. Electricals sit at the top, everyday durables at the bottom. The split is the empirical basis for prune-vs-double-down.</p>`;
+  html+=`<div class="finding">If the top (electricals) bars run high and the bottom (durables) bars run low, the data confirms the thesis: the electrician network drives brand choice in electricals but <b>not</b> in the durables being pruned. Current gap: <b>${gap} percentage points</b>.</div>`;
+  // sort: electricals first (by grp), keep defined order
+  PRODUCTS.forEach(p=>{
+    const col='q4_'+p.id;
+    const answered=D.filter(r=>r[col]);
+    if(!answered.length){return;}
+    const counts={};INF.forEach(i=>counts[i.id]=0);
+    answered.forEach(r=>{if(counts[r[col]]!=null)counts[r[col]]++;});
+    const total=answered.length;
+    const elecPct=pct(counts.electrician+counts.builder,total);
+    html+=`<div class="infbar ${p.grp==='dur'?'durrow':''}">
+      <div class="lab"><span class="nm"><span class="em">${p.em}</span>${p.label} <span style="color:var(--muted);font-weight:400">(n=${total})</span></span><span class="pct">${elecPct}% via electrician/builder</span></div>
+      <div class="stack">`;
+    INF.forEach(i=>{const w=pct(counts[i.id],total);if(w>0)html+=`<div class="seg" style="width:${w}%;background:${i.color}" title="${i.label}: ${w}%"></div>`;});
+    html+=`</div></div>`;
+  });
+  html+=`<div class="legend">`;
+  INF.forEach(i=>html+=`<span><span class="dot" style="background:${i.color}"></span>${i.label}</span>`);
+  html+=`</div><p class="note">Electrician + builder are grouped as "specified" influence in the headline gap.</p></div>`;
+
+  // ===== two-up: trust + value divergence =====
+  html+=`<div class="grid">`;
+  // trust q5
+  html+=`<div class="panel"><div class="ph"><h2>Trust in electrician's brand pick</h2><span class="tag">Q5</span></div>${simpleBar(D,'q5',VAL.q5,'#2f6fed')}</div>`;
+  // ev q12
+  html+=`<div class="panel"><div class="ph"><h2>Who'd you trust to fit an EV charger?</h2><span class="tag">Q12 · Pillar 3</span></div>
+    <p class="psub">Consumer validation for extending the electrician network into charger install/service.</p>${simpleBar(D,'q12',VAL.q12,'#2f9e6f')}</div>`;
+  html+=`</div>`;
+
+  // ===== value divergence q7 vs q8 =====
+  html+=`<div class="panel full"><div class="ph"><h2>What people value — safety-critical electricals vs everyday durables</h2><span class="tag">Q7 vs Q8 · customer value</span></div>
+    <p class="psub">Top-3 weighted (rank 1 = 3 pts, 2 = 2, 3 = 1). If "safety" and "electrician rec." dominate the left and "price/features" dominate the right, the value drivers diverge by category — the customer-value case for the portfolio split.</p>
+    <div class="split">
+      <div><h3 style="font-family:var(--display);font-size:13px;color:var(--elec);margin-bottom:10px">⚡ Electricals (Q7)</h3>${rankBar(D,'q7',VAL.q7,'#2f6fed')}</div>
+      <div><h3 style="font-family:var(--display);font-size:13px;color:var(--dur);margin-bottom:10px">🌀 Durables (Q8)</h3>${rankBar(D,'q8',VAL.q8,'#e08128')}</div>
+    </div></div>`;
+
+  // ===== region cross-tab of the gap =====
+  html+=`<div class="panel full"><div class="ph"><h2>Electrician-influence gap by region</h2><span class="tag">Q3 × Q4 · geography pillar</span></div>
+    <p class="psub">Does the electrician-influence pattern hold outside the South? Relevant to the cluster-density, electricals-only expansion thesis.</p>${regionTable()}</div>`;
+
+  // ===== brand awareness + EV intent =====
+  html+=`<div class="grid">
+    <div class="panel"><div class="ph"><h2>V-Guard brand awareness</h2><span class="tag">Q9</span></div>${simpleBar(D,'q9',VAL.q9,'#c8703a')}</div>
+    <div class="panel"><div class="ph"><h2>EV ownership / intent</h2><span class="tag">Q11</span></div>${simpleBar(D,'q11',VAL.q11,'#2f9e6f')}</div>
+  </div>`;
+
+  // ===== open text =====
+  const quotes=D.filter(r=>r.q10&&String(r.q10).trim()).map(r=>({t:r.q10,l:r.lang}));
+  html+=`<div class="panel full"><div class="ph"><h2>What V-Guard means to people</h2><span class="tag">Q10 · verbatims (${quotes.length})</span></div>`;
+  if(quotes.length){html+=`<div class="quotes">`;quotes.slice(0,40).forEach(q=>html+=`<div class="quote">"${esc(q.t)}"<div class="meta">${LANGS[q.l]||q.l}</div></div>`);html+=`</div>`;}
+  else html+=`<p class="psub">No open-text responses yet.</p>`;
+  html+=`</div>`;
+
+  $('#main').innerHTML=html;
+}
+
+/* ---- chart helpers ---- */
+function simpleBar(D,col,labels,color){
+  const counts={};Object.keys(labels).forEach(k=>counts[k]=0);
+  D.forEach(r=>{if(r[col]&&counts[r[col]]!=null)counts[r[col]]++;});
+  const tot=Object.values(counts).reduce((a,b)=>a+b,0);
+  let h='<div class="barlist">';
+  Object.keys(labels).sort((a,b)=>counts[b]-counts[a]).forEach(k=>{
+    const p=pct(counts[k],tot);
+    h+=`<div class="row"><div class="top"><span>${labels[k]}</span><span class="v">${p}% <span style="color:var(--muted);font-weight:400">(${counts[k]})</span></span></div>
+      <div class="bartrack"><div class="barfill" style="width:${p}%;background:${color}"></div></div></div>`;
+  });
+  return h+'</div>';
+}
+function rankBar(D,col,labels,color){
+  const pts={};Object.keys(labels).forEach(k=>pts[k]=0);
+  D.forEach(r=>{if(!r[col])return;String(r[col]).split('>').forEach((v,i)=>{if(pts[v]!=null)pts[v]+=(3-i);});});
+  const max=Math.max(1,...Object.values(pts));
+  let h='<div class="barlist">';
+  Object.keys(labels).sort((a,b)=>pts[b]-pts[a]).forEach(k=>{
+    const w=Math.round(pts[k]/max*100);
+    h+=`<div class="row"><div class="top"><span>${labels[k]}</span><span class="v">${pts[k]}</span></div>
+      <div class="bartrack"><div class="barfill" style="width:${w}%;background:${color}"></div></div></div>`;
+  });
+  return h+'</div>';
+}
+function regionTable(){
+  const regions=[['south','South'],['north','North'],['west','West'],['east','East'],['central','Central/NE']];
+  let h='<table><thead><tr><th>Region</th><th>n</th><th class="num">Elec. share (electricals)</th><th class="num">Elec. share (durables)</th><th class="num">Gap</th></tr></thead><tbody>';
+  regions.forEach(([id,name])=>{
+    const R=RAW.filter(r=>r.q3===id);
+    if(!R.length)return;
+    const e=grpElecShare(R,'elec'),d=grpElecShare(R,'dur');
+    h+=`<tr><td>${name}</td><td>${R.length}</td><td class="num">${e}%</td><td class="num">${d}%</td><td class="num" style="color:${e-d>15?'var(--green)':'var(--muted)'}">${e-d}pp</td></tr>`;
+  });
+  return h+'</tbody></table>';
+}
+function grpElecShare(R,grp){
+  const cats=PRODUCTS.filter(p=>p.grp===grp);
+  const vals=cats.map(p=>{
+    const col='q4_'+p.id;const ans=R.filter(r=>r[col]);
+    return pct(ans.filter(r=>r[col]==='electrician'||r[col]==='builder').length,ans.length);
+  }).filter(v=>!isNaN(v));
+  return avg(vals);
+}
+function avg(a){return a.length?Math.round(a.reduce((x,y)=>x+y,0)/a.length):0;}
+function median(a){a=a.filter(x=>x>0).sort((x,y)=>x-y);if(!a.length)return 0;const m=Math.floor(a.length/2);return a.length%2?a[m]:Math.round((a[m-1]+a[m])/2);}
+function esc(s){return String(s).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));}
+
+/* ---- export current filtered view ---- */
+$('#export').onclick=()=>{
+  const D=filtered();if(!D.length)return;
+  const cols=Object.keys(D[0]);
+  const csv=cols.join(',')+'\n'+D.map(r=>cols.map(c=>`"${String(r[c]==null?'':r[c]).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const b=new Blob([csv],{type:'text/csv'});const a=document.createElement('a');
+  a.href=URL.createObjectURL(b);a.download='vguard_responses_'+Date.now()+'.csv';a.click();
+};
+$('#refresh').onclick=load;
+$('#regionF').onchange=renderAll;
+$('#langF').onchange=renderAll;
+load();
+</script>
+</body>
+</html>
